@@ -210,10 +210,12 @@ std::string CoreWorkload::BuildKeyName(uint64_t key_num) {
   if (!ordered_inserts_) {
     key_num = utils::Hash(key_num);
   }
-  std::string prekey = "user";
+  // std::string prekey = "user";
   std::string value = std::to_string(key_num);
-  int fill = std::max(0, zero_padding_ - static_cast<int>(value.size()));
-  return prekey.append(fill, '0').append(value);
+  // int fill = std::max(0, zero_padding_ - static_cast<int>(value.size()));
+  int fill = 128 - static_cast<int>(value.size());
+  // return prekey.append(fill, '0').append(value);
+  return value.append(fill, 0);
 }
 
 void CoreWorkload::BuildValues(std::vector<ycsbc::DB::Field> &values) {
@@ -319,7 +321,7 @@ DB::Status CoreWorkload::TransactionReadModifyWrite(DB &db) {
 DB::Status CoreWorkload::TransactionScan(DB &db) {
   uint64_t key_num = NextTransactionKeyNum();
   const std::string key = BuildKeyName(key_num);
-  int len = scan_len_chooser_->Next();
+  int len = 20;
   std::vector<std::vector<DB::Field>> result;
   if (!read_all_fields()) {
     std::vector<std::string> fields;
