@@ -48,8 +48,8 @@ ifeq ($(BIND_LMDB), 1)
 	SOURCES += $(wildcard lmdb/*.cc)
 endif
 
-CXXFLAGS += -std=c++17 -Wall -pthread $(EXTRA_CXXFLAGS) -I./
-LDFLAGS += $(EXTRA_LDFLAGS) -lpthread
+CXXFLAGS += -std=c++17 -Wall -pthread $(EXTRA_CXXFLAGS) -I./ -I../leveldb/include
+LDFLAGS += $(EXTRA_LDFLAGS) -lpthread -L../leveldb/build
 SOURCES += $(wildcard core/*.cc)
 OBJECTS += $(SOURCES:.cc=.o)
 DEPS += $(SOURCES:.cc=.d)
