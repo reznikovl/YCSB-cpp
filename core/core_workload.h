@@ -162,6 +162,9 @@ class CoreWorkload {
   static const std::string FIELD_NAME_PREFIX;
   static const std::string FIELD_NAME_PREFIX_DEFAULT;
 
+  static const std::string KEY_SIZE_PROPERTY;
+  static const std::string KEY_SIZE_PROPERTY_DEFAULT;
+
   ///
   /// Initialize the scenario.
   /// Called once, in the main client thread, before any operations are started.
@@ -207,6 +210,7 @@ class CoreWorkload {
 
   std::string table_name_;
   int field_count_;
+  int key_size_;
   std::string field_prefix_;
   bool read_all_fields_;
   bool write_all_fields_;

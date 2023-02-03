@@ -10,6 +10,7 @@
 #include "core/utils.h"
 #include "core/core_workload.h"
 #include "core/db_factory.h"
+#include <unistd.h>
 
 #include <leveldb/options.h>
 #include <leveldb/write_batch.h>
@@ -40,7 +41,7 @@ namespace {
   const std::string PROP_CACHE_SIZE_DEFAULT = "-1";
 
   const std::string PROP_FILTER_BITS = "leveldb.filter_bits";
-  const std::string PROP_FILTER_BITS_DEFAULT = "0 0 0 0 0 0 0";
+  const std::string PROP_FILTER_BITS_DEFAULT = "-1";
 
   const std::string PROP_BLOCK_SIZE = "leveldb.block_size";
   const std::string PROP_BLOCK_SIZE_DEFAULT = "0";
@@ -130,6 +131,7 @@ void LeveldbDB::Init() {
   if (!s.ok()) {
     throw utils::Exception(std::string("LevelDB Open: ") + s.ToString());
   }
+  sleep(4);
 }
 
 void LeveldbDB::Cleanup() {

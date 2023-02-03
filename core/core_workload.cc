@@ -97,6 +97,10 @@ const string CoreWorkload::OPERATION_COUNT_PROPERTY = "operationcount";
 const std::string CoreWorkload::FIELD_NAME_PREFIX = "fieldnameprefix";
 const std::string CoreWorkload::FIELD_NAME_PREFIX_DEFAULT = "field";
 
+const std::string CoreWorkload::KEY_SIZE_PROPERTY = "keysize";
+const std::string CoreWorkload::KEY_SIZE_PROPERTY_DEFAULT = "128";
+
+
 namespace ycsbc {
 
 void CoreWorkload::Init(const utils::Properties &p) {
@@ -104,6 +108,7 @@ void CoreWorkload::Init(const utils::Properties &p) {
 
   field_count_ = std::stoi(p.GetProperty(FIELD_COUNT_PROPERTY, FIELD_COUNT_DEFAULT));
   field_prefix_ = p.GetProperty(FIELD_NAME_PREFIX, FIELD_NAME_PREFIX_DEFAULT);
+  key_size_ = std::stoi(p.GetProperty(KEY_SIZE_PROPERTY, KEY_SIZE_PROPERTY_DEFAULT));
   field_len_generator_ = GetFieldLenGenerator(p);
 
   double read_proportion = std::stod(p.GetProperty(READ_PROPORTION_PROPERTY,
@@ -212,8 +217,11 @@ std::string CoreWorkload::BuildKeyName(uint64_t key_num) {
   }
   // std::string prekey = "user";
   std::string value = std::to_string(key_num);
+  if (value.size() >= key_size_) {
+    return value.substr(0, key_size_);
+  }
   // int fill = std::max(0, zero_padding_ - static_cast<int>(value.size()));
-  int fill = 128 - static_cast<int>(value.size());
+  int fill = key_size_ - static_cast<int>(value.size());
   // return prekey.append(fill, '0').append(value);
   return value.append(fill, 0);
 }
@@ -325,7 +333,7 @@ DB::Status CoreWorkload::TransactionScan(DB &db) {
   std::vector<std::vector<DB::Field>> result;
   if (!read_all_fields()) {
     std::vector<std::string> fields;
-    fields.push_back(NextFieldName());
+  fields.push_back(NextFieldName());
     return db.Scan(table_name_, key, len, &fields, result);
   } else {
     return db.Scan(table_name_, key, len, NULL, result);
