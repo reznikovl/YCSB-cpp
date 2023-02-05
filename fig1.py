@@ -10,7 +10,7 @@ if len(sys.argv) < 2:
 
 # open log file
 timestr = time.strftime("%Y%m%d-%H%M%S")
-f = open("logs/fig_1_" + timestr + ".txt", "w+")
+f = open("../logs/fig_1_" + timestr + ".txt", "w+")
 
 # add list to track results
 result_fields = ["Operation", "Size (MB)", "Ratio", "Time"]

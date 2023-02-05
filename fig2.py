@@ -10,14 +10,14 @@ if len(sys.argv) < 2:
 
 # open log file
 timestr = time.strftime("%Y%m%d-%H%M%S")
-f = open("logs/fig_2_" + timestr + ".txt", "w+")
+f = open("../logs/fig_2_" + timestr + ".txt", "w+")
 
 # add list to track results
 result_fields = ["Operation", "Key Size (bytes)", "Ratio", "Time"]
 results = []
 
 # key sizes to write
-key_sizes = [16, 64, 1024]
+key_sizes = [16, 64, 128, 1024]
 
 if (sys.argv[1] == "1"):
     # do writes
