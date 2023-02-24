@@ -15,78 +15,31 @@ if "fig_3" in sys.argv[1]:
     # Fig 3
 
     # preprocess by adding read/write ratio column
-    data["Read/Write Ratio"] = np.nan
-    for index, row in data.iterrows():
-        seg1 = data[data["Operation"] == "WRITE"]
-        seg2 = seg1[seg1["Base Factor"] == row["Base Factor"]]
-        seg3 = seg2[np.isclose(row["Ratio"], seg2["Ratio"])]
-        data.loc[index, "Read/Write Ratio"] = row["Time"] / seg3["Time"].iloc[0]
+    baseline = data[data["Ratio"] == 1]
+    for factor in baseline["Base Factor"].unique():
+        curr_factor_tbl = baseline[baseline["Base Factor"] == factor]
+        write = curr_factor_tbl[curr_factor_tbl["Operation"] == "WRITE"]
+        scan = curr_factor_tbl[curr_factor_tbl["Operation"] == "SCAN"]
+        plt.scatter(1/write["Time"].iloc[0], 1/scan["Time"].iloc[0], marker="x", color="black", label="1 Ratio (Baseline)")
 
-    # Read Throughput to Write Throughput Ratio
-    for base in data["Base Factor"].unique():
-        curr_data = data[data["Base Factor"] == base]
-        curr_data = curr_data[curr_data["Operation"] == "READ"]
-        plt.plot(curr_data["Ratio"], curr_data["Read/Write Ratio"], marker='o')
-    plt.legend([str(i) + " Base Leveling Factor" for i in data["Base Factor"].unique()])
-    plt.xlabel("Leveling Ratio Difference")
-    plt.ylabel("Read Throughput / Write Throughput")
-    plt.title("Read Throughput to Write Throughput Ratio")
-    plt.savefig(result_path + "fig3_read_write_ratio.jpg")
-    plt.clf()
-
-    # Scan Throughput to Write Throughput Ratio
-    for base in data["Base Factor"].unique():
-        curr_data = data[data["Base Factor"] == base]
-        curr_data = curr_data[curr_data["Operation"] == "SCAN"]
-        plt.plot(curr_data["Ratio"], curr_data["Read/Write Ratio"], marker='o')
-    plt.legend([str(i) + " Base Leveling Factor" for i in data["Base Factor"].unique()])
-    plt.xlabel("Leveling Ratio Difference")
-    plt.ylabel("Scan Throughput / Write Throughput")
-    plt.title("Scan Throughput to Write Throughput Ratio")
-    plt.savefig(result_path + "fig3_scan_write_ratio.jpg")
-    plt.clf()
-
-    # Read Throughput
-    for base in data["Base Factor"].unique():
-        curr_data = data[data["Base Factor"] == base]
-        curr_data = curr_data[curr_data["Operation"] == "READ"]
-        plt.plot(curr_data["Ratio"], curr_data["Time"], marker='o')
-    plt.legend([str(i) + " Base Leveling Factor" for i in data["Base Factor"].unique()])
-    plt.xlabel("Leveling Ratio Difference")
-    plt.ylabel("Read Throughput (Op/Sec)")
-    plt.title("Read Throughput")
-    plt.savefig(result_path + "fig3_read_throughput.jpg")
-    plt.clf()
-
-    # Scan Throughput
-    for base in data["Base Factor"].unique():
-        curr_data = data[data["Base Factor"] == base]
-        curr_data = curr_data[curr_data["Operation"] == "SCAN"]
-        plt.plot(curr_data["Ratio"], curr_data["Time"], marker='o')
-    plt.legend([str(i) + " Base Leveling Factor" for i in data["Base Factor"].unique()])
-    plt.xlabel("Leveling Ratio Difference")
-    plt.ylabel("Scan Throughput (Op/Sec)")
-    plt.title("Scan Throughput")
-    plt.savefig(result_path + "fig3_scan_throughput.jpg")
-    plt.clf()
-
-    # Write Throughput
-    for base in data["Base Factor"].unique():
-        curr_data = data[data["Base Factor"] == base]
-        curr_data = curr_data[curr_data["Operation"] == "WRITE"]
-        plt.plot(curr_data["Ratio"], curr_data["Time"], marker='o')
-    plt.legend([str(i) + " Base Leveling Factor" for i in data["Base Factor"].unique()])
-    plt.xlabel("Leveling Ratio Difference")
-    plt.ylabel("Write Throughput (Op/Sec)")
-    plt.title("Write Throughput")
-    plt.savefig(result_path + "fig3_write_throughput.jpg")
-    plt.clf()
+    test = data[data["Ratio"] != 1]
+    for factor in test["Base Factor"].unique():
+        curr_factor_tbl = test[test["Base Factor"] == factor]
+        write = curr_factor_tbl[curr_factor_tbl["Operation"] == "WRITE"]
+        scan = curr_factor_tbl[curr_factor_tbl["Operation"] == "SCAN"]
+        plt.scatter(1/write["Time"].iloc[0], 1/scan["Time"].iloc[0], marker="o", color="red", label="0.8 Ratio")
 
 
+    # https://stackoverflow.com/questions/13588920/stop-matplotlib-repeating-labels-in-legend
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
 
+    plt.title("Scan Cost vs Write Cost")
+    plt.xlabel("Write Cost (s)")
+    plt.ylabel("Scan Cost (s)")
     
-    sys.exit()
-
+    plt.savefig(result_path + "scan_vs_write.jpg")
 
 # Fig 1 and 2
 
@@ -95,14 +48,14 @@ reads = data[data["Operation"] == "READ"]
 reads_base = reads[reads["Ratio"] == 1]
 reads_test = reads[reads["Ratio"] < 1]
 
-plt.plot(reads_test.iloc[:, 1], reads_test.iloc[:, -1], marker= 'o')
-plt.plot(reads_base.iloc[:, 1], reads_base.iloc[:, -1], marker='o')
+plt.plot(reads_test.iloc[:, 1], 1/reads_test.iloc[:, -1], marker= 'o')
+plt.plot(reads_base.iloc[:, 1], 1/reads_base.iloc[:, -1], marker='o')
 
 
-plt.title("Point Read Throughput")
+plt.title("Point Read Latency vs Database Size")
 plt.xlabel(colname)
-plt.ylabel("Read Throughput (Op/Sec)")
-plt.legend(["2/3 Ratio", "1 Ratio (baseline)"])
+plt.ylabel("Average Read Latency (s)")
+plt.legend(["0.8 Ratio", "1 Ratio (baseline)"])
 
 
 
@@ -115,14 +68,14 @@ scans = data[data["Operation"] == "SCAN"]
 scans_base = scans[scans["Ratio"] == 1]
 scans_test = scans[scans["Ratio"] < 1]
 
-plt.plot(scans_test.iloc[:, 1], scans_test.iloc[:, -1], marker= 'o')
-plt.plot(scans_base.iloc[:, 1], scans_base.iloc[:, -1], marker='o')
+plt.plot(scans_test.iloc[:, 1], 1/scans_test.iloc[:, -1], marker= 'o')
+plt.plot(scans_base.iloc[:, 1], 1/scans_base.iloc[:, -1], marker='o')
 
 
-plt.title("Scan Throughput")
+plt.title("Scan Latency vs Database Size")
 plt.xlabel(colname)
-plt.ylabel("Scan Throughput (Op/Sec)")
-plt.legend(["2/3 Ratio", "1 Ratio (baseline)"])
+plt.ylabel("Scan Average Latency (s)")
+plt.legend(["0.8 Ratio", "1 Ratio (baseline)"])
 
 plt.savefig(result_path + "scan_" + colname + ".jpg")
 

@@ -17,7 +17,10 @@ result_fields = ["Operation", "Size (MB)", "Ratio", "Time"]
 results = []
 
 # mb to write
-mb_to_write = [512, 1024, 2048, 3076]
+mb_to_write = [1024, 2048, 3076, 4096]
+
+# test ratio to use
+test_ratio = 0.8
 
 if (sys.argv[1] == "1"):
     # do writes
@@ -46,14 +49,14 @@ if (sys.argv[1] == "1"):
 
         curr_command.pop() # pop previous db name
         curr_command += ["leveldb.dbname=/tmp/fig1_test_" + str(num_mb)]
-        curr_command += ["-p", "leveldb.ratio_diff=0.66666667"]
+        curr_command += ["-p", "leveldb.ratio_diff=" + str(test_ratio)]
         print("Seeding db with " + str(num_mb) + " mb test...")
         r2 = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
         f.write(str(curr_command))
 
         parse_location = r2.stdout.find("Run throughput")
         num2 = float((r2.stdout[parse_location + 24:]).strip())  # magic number :(
-        results.append(("WRITE", num_mb, 0.66666667, num2))
+        results.append(("WRITE", num_mb, test_ratio, num2))
         f.write("-----TEST WRITE " + str(num_mb) + "-----\n")
         f.write(r2.stderr)
         f.write(r2.stdout)
@@ -107,7 +110,7 @@ for num_mb in mb_to_write:
 
     curr_command.pop()  # pop previous db name
     curr_command += ["leveldb.dbname=/tmp/fig1_test_" + str(num_mb)]
-    curr_command += ["-p", "ratio_diff=0.66666667"]
+    curr_command += ["-p", "ratio_diff=" + str(test_ratio)]
     print("Reading from db with " + str(num_mb) + " mb test...")
     r2 = subprocess.run(
         curr_command, capture_output=True, encoding="utf-8")
@@ -116,7 +119,7 @@ for num_mb in mb_to_write:
     parse_location = r2.stdout.find("Run throughput")
     num2 = float((r2.stdout[parse_location + 24:]
                   ).strip())  # magic number :(
-    results.append(("READ", num_mb, 0.66666667, num2))
+    results.append(("READ", num_mb, test_ratio, num2))
     f.write("-----TEST READ " + str(num_mb) + "-----\n")
     f.write(r2.stderr)
     f.write(r2.stdout)
@@ -149,7 +152,7 @@ for num_mb in mb_to_write:
 
     curr_command.pop()  # pop previous db name
     curr_command += ["leveldb.dbname=/tmp/fig1_test_" + str(num_mb)]
-    curr_command += ["-p", "ratio_diff=0.66666667"]
+    curr_command += ["-p", "ratio_diff=" + str(test_ratio)]
     print("Scanning from db with " + str(num_mb) + " mb test...")
     f.write(str(curr_command))
     r2 = subprocess.run(
@@ -158,7 +161,7 @@ for num_mb in mb_to_write:
     parse_location = r2.stdout.find("Run throughput")
     num2 = float((r2.stdout[parse_location + 24:]
                   ).strip())  # magic number :(
-    results.append(("SCAN", num_mb, 0.66666667, num2))
+    results.append(("SCAN", num_mb, test_ratio, num2))
     f.write("-----TEST SCAN " + str(num_mb) + "-----\n")
     f.write(r2.stderr)
     f.write(r2.stdout)
