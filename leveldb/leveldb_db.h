@@ -22,6 +22,7 @@
 #include <leveldb/filter_policy.h>
 #include <vector>
 #include <sstream>
+#include <iterator>
 
 namespace ycsbc {
 

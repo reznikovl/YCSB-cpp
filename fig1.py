@@ -17,7 +17,8 @@ result_fields = ["Operation", "Size (MB)", "Ratio", "Time"]
 results = []
 
 # mb to write
-mb_to_write = [1024, 2048, 3076, 4096]
+mb_to_write = [1024, 2048, 3076]
+db_path = "/home/ec2-user/research/mountpt/"
 
 # test ratio to use
 test_ratio = 0.8
@@ -32,12 +33,14 @@ if (sys.argv[1] == "1"):
 
         op_count = num_mb * 1024 * 8
         curr_command += ["-p", "operationcount=" + str(op_count)] # 1024 * 1024 / 128
-        curr_command += ["-p", "leveldb.dbname=/tmp/fig1_base_" + str(num_mb)] # must be last
+        curr_command += ["-p", "leveldb.dbname=" + db_path + "fig1_base_" + str(num_mb)] # must be last
 
         r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
         f.write(str(curr_command))
 
         parse_location = r.stdout.find("Run throughput")
+        print("Parse location: ", parse_location)
+        print((r.stdout[parse_location + 24:]).strip())
         num = float((r.stdout[parse_location + 24:]).strip())  # magic number :(
         results.append(("WRITE", num_mb, 1, num))
 
@@ -48,13 +51,15 @@ if (sys.argv[1] == "1"):
         f.write("-----BASE WRITE FINISHED-----\n")
 
         curr_command.pop() # pop previous db name
-        curr_command += ["leveldb.dbname=/tmp/fig1_test_" + str(num_mb)]
+        curr_command += ["leveldb.dbname=" + db_path + "fig1_test_" + str(num_mb)]
         curr_command += ["-p", "leveldb.ratio_diff=" + str(test_ratio)]
         print("Seeding db with " + str(num_mb) + " mb test...")
         r2 = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
         f.write(str(curr_command))
 
         parse_location = r2.stdout.find("Run throughput")
+        print("Parse location: ", parse_location)
+        print((r.stdout[parse_location + 24:]).strip())
         num2 = float((r2.stdout[parse_location + 24:]).strip())  # magic number :(
         results.append(("WRITE", num_mb, test_ratio, num2))
         f.write("-----TEST WRITE " + str(num_mb) + "-----\n")
@@ -68,14 +73,14 @@ if int(sys.argv[1]) >= 1:
     os.chdir("../leveldb/build")
     for num_mb in mb_to_write:
         print("Forcing filters for " + str(num_mb) + " mb base...")
-        r = subprocess.run(["./seed", "0", "/tmp/fig1_base_" + str(num_mb), "1"], capture_output=True, encoding="utf-8")
+        r = subprocess.run(["./seed", "0", db_path + "fig1_base_" + str(num_mb), "1"], capture_output=True, encoding="utf-8")
         f.write("-----BASE FILTER " + str(num_mb) + " -----\n")
         f.write(r.stderr)
         f.write(r.stdout)
         f.write("-----BASE FILTER FINISHED-----\n")
 
         print("Forcing filters for " + str(num_mb) + " mb test...")
-        r = subprocess.run(["./seed", "0", "/tmp/fig1_test_" + str(num_mb), "1"], capture_output=True, encoding="utf-8")
+        r = subprocess.run(["./seed", "0", db_path + "fig1_test_" + str(num_mb), "1"], capture_output=True, encoding="utf-8")
         f.write("-----TEST FILTER " + str(num_mb) + " -----\n")
         f.write(r.stderr)
         f.write(r.stdout)
@@ -92,7 +97,7 @@ for num_mb in mb_to_write:
     curr_command = base_write_args.copy()
 
     # must be last
-    curr_command += ["-p", "leveldb.dbname=/tmp/fig1_base_" + str(num_mb)]
+    curr_command += ["-p", "leveldb.dbname=" + db_path + "fig1_base_" + str(num_mb)]
 
     r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
     f.write(str(curr_command))
@@ -109,7 +114,7 @@ for num_mb in mb_to_write:
     f.write("-----BASE READ FINISHED-----\n")
 
     curr_command.pop()  # pop previous db name
-    curr_command += ["leveldb.dbname=/tmp/fig1_test_" + str(num_mb)]
+    curr_command += ["leveldb.dbname=" + db_path + "fig1_test_" + str(num_mb)]
     curr_command += ["-p", "ratio_diff=" + str(test_ratio)]
     print("Reading from db with " + str(num_mb) + " mb test...")
     r2 = subprocess.run(
@@ -135,7 +140,7 @@ for num_mb in mb_to_write:
     curr_command = base_write_args.copy()
 
     # must be last
-    curr_command += ["-p", "leveldb.dbname=/tmp/fig1_base_" + str(num_mb)]
+    curr_command += ["-p", "leveldb.dbname=" + db_path + "fig1_base_" + str(num_mb)]
 
     r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
 
@@ -151,7 +156,7 @@ for num_mb in mb_to_write:
     f.write("-----BASE SCAN FINISHED-----\n")
 
     curr_command.pop()  # pop previous db name
-    curr_command += ["leveldb.dbname=/tmp/fig1_test_" + str(num_mb)]
+    curr_command += ["leveldb.dbname=" + db_path + "fig1_test_" + str(num_mb)]
     curr_command += ["-p", "ratio_diff=" + str(test_ratio)]
     print("Scanning from db with " + str(num_mb) + " mb test...")
     f.write(str(curr_command))
