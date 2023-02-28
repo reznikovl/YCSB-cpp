@@ -18,7 +18,7 @@ results = []
 
 # mb to write
 mb_to_write = [1024, 2048, 3076]
-db_path = "/home/ec2-user/research/mountpt/"
+db_path = "/tmp/"
 
 # test ratio to use
 test_ratio = 0.8
@@ -91,7 +91,7 @@ if int(sys.argv[1]) >= 1:
 
 # Perform Point Reads
 base_write_args = ["./ycsb", "-run", "-db",
-                   "leveldb", "-P", "workloads/read_uniform", "-s"]
+                   "leveldb", "-P", "workloads/read_uniform", "-s", "-p", 'leveldb.filter_bits=5,5,5,5,5,5,5']
 for num_mb in mb_to_write:
     print("Reading from db with " + str(num_mb) + " mb base...")
     curr_command = base_write_args.copy()
