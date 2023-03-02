@@ -193,12 +193,14 @@ void LeveldbDB::GetOptions(const utils::Properties &props, leveldb::Options *opt
 
   int base_scaling_factor = std::stoi(props.GetProperty(PROP_BASE_SCALING_FACTOR, PROP_BASE_SCALING_FACTOR_DEFAULT));
   if (base_scaling_factor > 1) {
+    std::cout << "Placing base scaling factor" << std::endl;
     opt->base_scaling_factor = base_scaling_factor;
   }
 
   double ratio_diff = std::stod(props.GetProperty(PROP_RATIO_DIFF, PROP_RATIO_DIFF_DEFAULT));
   if (ratio_diff < 1 && ratio_diff > 0)
   {
+    std::cout << "Placing ratio diff" << std::endl;
     opt->ratio_diff = ratio_diff;
   }
 }

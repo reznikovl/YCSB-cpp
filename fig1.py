@@ -23,9 +23,13 @@ db_path = "/tmp/"
 # test ratio to use
 test_ratio = 0.8
 
+# base ratio
+base_ratio = 3
+
 if (sys.argv[1] == "1"):
     # do writes
     base_write_args = ["./ycsb", "-run", "-db", "leveldb", "-P", "workloads/write_uniform", "-s"]
+    base_write_args += ["-p", "leveldb.base_scaling_factor=" + str(base_ratio)]
     for num_mb in mb_to_write:
         print("Seeding db with " + str(num_mb) + " mb base...")
         curr_command = base_write_args.copy()
@@ -92,6 +96,7 @@ if int(sys.argv[1]) >= 1:
 # Perform Point Reads
 base_write_args = ["./ycsb", "-run", "-db",
                    "leveldb", "-P", "workloads/read_uniform", "-s", "-p", 'leveldb.filter_bits=5,5,5,5,5,5,5']
+base_write_args += ["-p", "leveldb.base_scaling_factor=" + str(base_ratio)]
 for num_mb in mb_to_write:
     print("Reading from db with " + str(num_mb) + " mb base...")
     curr_command = base_write_args.copy()
@@ -135,6 +140,7 @@ print(results)
 # Perform Range Reads
 base_write_args = ["./ycsb", "-run", "-db",
                    "leveldb", "-P", "workloads/scan_uniform", "-s"]
+base_write_args += ["-p", "leveldb.base_scaling_factor=" + str(base_ratio)]
 for num_mb in mb_to_write:
     print("Scanning from db with " + str(num_mb) + " mb base...")
     curr_command = base_write_args.copy()

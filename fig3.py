@@ -16,7 +16,7 @@ f = open("../logs/fig_3_" + timestr + ".txt", "w+")
 result_fields = ["Operation", "Base Factor", "Ratio", "Time"]
 results = []
 
-base_factors = [2, 4, 8]
+base_factors = [2, 3, 4, 5]
 test_factors = [2, 3, 4]
 test_ratios = [0.8]
 test_ratio_strs = ["0_8"] # avoid . in file names
@@ -79,14 +79,14 @@ if int(sys.argv[1]) >= 1:
     for base_factor in base_factors:
         print("Forcing filters for leveling with " + str(base_factor) + " base...")
         r = subprocess.run(["./seed", "0", "/tmp/fig3_leveling_" + str(base_factor), "1"], capture_output=True, encoding="utf-8")
-        f.write("-----FILTER " + str(base_factor) + " base and " + ratio_filename_str + " ratio-----\n")
+        f.write("-----FILTER leveling " + str(base_factor) + " base -----\n")
         f.write(r.stderr)
         f.write(r.stdout)
         f.write("-----FILTER FINISHED-----\n")
 
     for test_factor in test_factors:
         for ratio, ratio_filename_str in zip(test_ratios, test_ratio_strs):
-            print("Forcing filters for db with " + str(test_factor) + " base and " + str(test_factor) + "ratio...")
+            print("Forcing filters for db with " + str(test_factor) + " base and " + str(ratio) + "ratio...")
             r = subprocess.run(["./seed", "0", "/tmp/fig3_" + str(test_factor) + "_" + ratio_filename_str, "1"], capture_output=True, encoding="utf-8")
             f.write("-----FILTER " + str(test_factor) + " base and " + ratio_filename_str + " ratio-----\n")
             f.write(r.stderr)
@@ -136,7 +136,7 @@ for test_factor in test_factors:
                         ).strip())  # magic number :(
             results.append(("READ", test_factor, ratio, num))
 
-            f.write("-----READ leveling " + str(base_factor) + " base...-----\n")
+            f.write("-----READ  " + str(base_factor) + " base, " + str(ratio) + " ratio...-----\n")
             f.write(r.stderr)
             f.write(r.stdout)
 
@@ -150,7 +150,7 @@ for base_factor in base_factors:
     base_scan_args = ["./ycsb", "-run", "-db", "leveldb", "-P", "workloads/scan_uniform", "-p", "leveldb.base_scaling_factor=" + str(base_factor), "-s"]
     
     print("Scanning from leveling db with factor " + str(base_factor) + "...")
-    curr_command = base_read_args.copy()
+    curr_command = base_scan_args.copy()
     curr_command += ["-p", "leveldb.dbname=/tmp/fig3_leveling_" + str(base_factor)]
 
     r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
@@ -171,7 +171,7 @@ for test_factor in test_factors:
         base_read_args = ["./ycsb", "-run", "-db", "leveldb", "-P", "workloads/scan_uniform", "-p", "leveldb.base_scaling_factor=" + str(test_factor), "-s"]
         for ratio, ratio_filename_str in zip(test_ratios, test_ratio_strs):
             print("Scanning from db with " + str(test_factor) + " base and " + str(ratio) + " ratio...")
-            curr_command = base_read_args.copy()
+            curr_command = base_scan_args.copy()
             curr_command += ["-p", "leveldb.ratio_diff=" + str(ratio)]
             curr_command += ["-p", "leveldb.dbname=/tmp/fig3_" + str(test_factor) + "_" + ratio_filename_str]
 
@@ -183,7 +183,7 @@ for test_factor in test_factors:
                         ).strip())  # magic number :(
             results.append(("SCAN", test_factor, ratio, num))
 
-            f.write("-----SCAN leveling " + str(test_factor) + " base...-----\n")
+            f.write("-----SCAN  " + str(base_factor) + " base, " + str(ratio) + " ratio...-----\n")
             f.write(r.stderr)
             f.write(r.stdout)
 

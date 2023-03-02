@@ -40,6 +40,7 @@ if "fig_3" in sys.argv[1]:
     plt.ylabel("Scan Cost (s)")
     
     plt.savefig(result_path + "scan_vs_write.jpg")
+    sys.exit()
 
 # Fig 1 and 2
 
