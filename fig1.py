@@ -17,14 +17,14 @@ result_fields = ["Operation", "Size (MB)", "Ratio", "Time"]
 results = []
 
 # mb to write
-mb_to_write = [1024, 2048, 3076]
-db_path = "/tmp/"
+mb_to_write = [1024*1, 1024*2, 1024*4, 1024*6, 1024*8, 1024*10, 1024 * 12, 1024 * 14]
+db_path = "/home/ec2-user/research/mountpt/"
 
 # test ratio to use
 test_ratio = 0.8
 
 # base ratio
-base_ratio = 3
+base_ratio = 10
 
 if (sys.argv[1] == "1"):
     # do writes
