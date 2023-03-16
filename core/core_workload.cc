@@ -229,12 +229,14 @@ std::string CoreWorkload::BuildKeyName(uint64_t key_num) {
 void CoreWorkload::BuildValues(std::vector<ycsbc::DB::Field> &values) {
   for (int i = 0; i < field_count_; ++i) {
     values.push_back(DB::Field());
+
     ycsbc::DB::Field &field = values.back();
     field.name.append(field_prefix_).append(std::to_string(i));
-    uint64_t len = field_len_generator_->Next();
-    field.value.reserve(len);
-    RandomByteGenerator byte_generator;
-    std::generate_n(std::back_inserter(field.value), len, [&]() { return byte_generator.Next(); } );
+    // uint64_t len = field_len_generator_->Next();
+    // field.value.reserve(len);
+    // RandomByteGenerator byte_generator;
+    // std::generate_n(std::back_inserter(field.value), len, [&]() { return byte_generator.Next(); } );
+    field.value = std::string(field_len_generator_->Next() - field_prefix_.length(), '.');
   }
 }
 

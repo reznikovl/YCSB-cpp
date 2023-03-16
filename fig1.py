@@ -5,8 +5,8 @@ import subprocess
 import csv
 
 # mb to write
-#mb_to_write = [1024*1, 1024*2, 1024*4, 1024*6, 1024*8, 1024*10, 1024 * 12, 1024 * 14]
-mb_to_write = [1024*1, 1024*2, 1024*4]
+mb_to_write = [1024*1, 1024*2, 1024*4, 1024*6, 1024*8, 1024*10, 1024 * 12, 1024 * 14, 1024 * 18, 1024 * 22, 1024 * 25]
+# mb_to_write = [1024*1, 1024*2, 1024*4, 1024*6]
 db_path = "/home/ec2-user/research/mountpt/"
 
 # T (ratio for leveling)
@@ -43,7 +43,7 @@ results = []
 
 if (sys.argv[1] == "1"):
     # do writes
-    base_write_args = ["./ycsb", "-run", "-db", "leveldb", "-P", "workloads/write_uniform", "-s", "-p", "recordcount=0", "-p", f"fieldlength={value_size_bytes}", "-p", f"keysize={key_size_bytes}"] # for now, we are scanning for no duplicates
+    base_write_args = ["./ycsb", "-run", "-db", "leveldb", "-P", "workloads/write_uniform", "-s", "-p", "recordcount=0", "-p", f"keysize={key_size_bytes}", "-p", f"fieldlength={value_size_bytes}",] # for now, we are scanning for no duplicates
     for num_mb in mb_to_write:
         print(f"Seeding db with {num_mb} mb base...")
         curr_command = base_write_args.copy()
@@ -57,13 +57,13 @@ if (sys.argv[1] == "1"):
         curr_command += ["-p", f"leveldb.dbname={db_path}fig1_base_{num_mb}"] # must be last
 
         r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
+        f.write("\n-----BASE WRITE " + str(num_mb) + " -----\n")
         f.write(str(curr_command))
 
         parse_location = r.stdout.find("Run throughput")
         num = float((r.stdout[parse_location + 24:]).strip())  # magic number :(
         results.append(("WRITE", num_mb, 1, num))
 
-        f.write("\n-----BASE WRITE " + str(num_mb) + " -----\n")
         f.write(r.stderr)
         f.write(r.stdout)
         
@@ -76,12 +76,13 @@ if (sys.argv[1] == "1"):
         curr_command += ["-p", f"leveldb.ratio_diff={c}"]
         print(f"Seeding db with {num_mb} mb test...")
         r2 = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
+        f.write("\n-----TEST WRITE " + str(num_mb) + "-----\n")
         f.write(str(curr_command))
 
         parse_location = r2.stdout.find("Run throughput")
         num2 = float((r2.stdout[parse_location + 24:]).strip())  # magic number :(
         results.append(("WRITE", num_mb, c, num2))
-        f.write("\n-----TEST WRITE " + str(num_mb) + "-----\n")
+        
         f.write(r2.stderr)
         f.write(r2.stdout)
         f.write("\n-----TEST WRITE FINISHED" + str(num_mb) + "-----\n")
@@ -100,7 +101,7 @@ if int(sys.argv[1]) >= 1:
         f.write("\n-----BASE FILTER FINISHED-----\n")
 
         print(f"Forcing filters for {num_mb} mb test...")
-        r = subprocess.run(["./seed", "0", f"{db_path}fig1_test_{num_mb}" + str(num_mb), "1"], capture_output=True, encoding="utf-8")
+        r = subprocess.run(["./seed", "0", f"{db_path}fig1_test_{num_mb}", "1"], capture_output=True, encoding="utf-8")
         f.write("\n-----TEST FILTER " + str(num_mb) + " -----\n")
         f.write(r.stderr)
         f.write(r.stdout)
@@ -120,6 +121,7 @@ for num_mb in mb_to_write:
     curr_command += ["-p", f"leveldb.dbname={db_path}fig1_base_{num_mb}"] # must be last
 
     r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
+    f.write("\n-----BASE READ " + str(num_mb) + " -----\n")
     f.write(str(curr_command))
 
     parse_location = r.stdout.find("Run throughput")
@@ -127,7 +129,6 @@ for num_mb in mb_to_write:
                  ).strip())  # magic number :(
     results.append(("READ", num_mb, 1, num))
 
-    f.write("\n-----BASE READ " + str(num_mb) + " -----\n")
     f.write(r.stderr)
     f.write(r.stdout)
 
@@ -139,13 +140,14 @@ for num_mb in mb_to_write:
     print(f"Reading from db with {num_mb} mb test...")
     r2 = subprocess.run(
         curr_command, capture_output=True, encoding="utf-8")
+    f.write("\n-----TEST READ " + str(num_mb) + "-----\n")
     f.write(str(curr_command))
 
     parse_location = r2.stdout.find("Run throughput")
     num2 = float((r2.stdout[parse_location + 24:]
                   ).strip())  # magic number :(
     results.append(("READ", num_mb, c, num2))
-    f.write("\n-----TEST READ " + str(num_mb) + "-----\n")
+    
     f.write(r2.stderr)
     f.write(r2.stdout)
     f.write("\n-----TEST READ FINISHED-----\n")
@@ -165,7 +167,8 @@ for num_mb in mb_to_write:
 
     # must be last
     curr_command += ["-p", f"leveldb.dbname={db_path}fig1_base_{num_mb}"]
-
+    f.write("\n-----BASE SCAN " + str(num_mb) + " -----\n")
+    f.write(str(curr_command))
     r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
 
     parse_location = r.stdout.find("Run throughput")
@@ -173,7 +176,7 @@ for num_mb in mb_to_write:
                  ).strip())  # magic number :(
     results.append(("SCAN", num_mb, 1, num))
 
-    f.write("\n-----BASE SCAN " + str(num_mb) + " -----\n")
+    
     f.write(r.stderr)
     f.write(r.stdout)
 
@@ -183,6 +186,7 @@ for num_mb in mb_to_write:
     curr_command += [f"leveldb.dbname={db_path}fig1_test_{num_mb}"]
     curr_command += ["-p", f"ratio_diff={c}"]
     print(f"Scanning from db with {num_mb} mb test...")
+    f.write("\n-----TEST SCAN " + str(num_mb) + "-----\n")
     f.write(str(curr_command))
     r2 = subprocess.run(
         curr_command, capture_output=True, encoding="utf-8")
@@ -191,7 +195,6 @@ for num_mb in mb_to_write:
     num2 = float((r2.stdout[parse_location + 24:]
                   ).strip())  # magic number :(
     results.append(("SCAN", num_mb, c, num2))
-    f.write("\n-----TEST SCAN " + str(num_mb) + "-----\n")
     f.write(r2.stderr)
     f.write(r2.stdout)
 
