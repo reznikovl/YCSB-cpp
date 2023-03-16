@@ -331,7 +331,7 @@ DB::Status CoreWorkload::TransactionReadModifyWrite(DB &db) {
 DB::Status CoreWorkload::TransactionScan(DB &db) {
   uint64_t key_num = NextTransactionKeyNum();
   const std::string key = BuildKeyName(key_num);
-  int len = 20;
+  int len = 100;
   std::vector<std::vector<DB::Field>> result;
   if (!read_all_fields()) {
     std::vector<std::string> fields;

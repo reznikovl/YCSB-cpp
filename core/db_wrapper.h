@@ -35,7 +35,7 @@ class DBWrapper : public DB {
     timer_.Start();
     Status s = db_->Read(table, key, fields, result);
     uint64_t elapsed = timer_.End();
-    if (s == kNotFound) {
+    if (s == kNotFound || s == kOK) {
       measurements_->Report(READ, elapsed);
     } else {
       measurements_->Report(READ_FAILED, elapsed);
