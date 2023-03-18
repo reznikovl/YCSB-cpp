@@ -13,13 +13,13 @@ db_path = "/home/ec2-user/research/mountpt/"
 T = 4
 
 # k (ratio for Autumn)
-k = 3
+k = 4
 
 # autumn parameter to use
 c = 0.8
 
 key_size_bytes = 16
-value_size_bytes = 128
+value_size_bytes = 100
 
 if len(sys.argv) < 2:
     print("Please specify 1 if dbs need to be seeded else 0")
