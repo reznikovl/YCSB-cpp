@@ -76,14 +76,14 @@ const string CoreWorkload::REQUEST_DISTRIBUTION_DEFAULT = "uniform";
 const string CoreWorkload::ZERO_PADDING_PROPERTY = "zeropadding";
 const string CoreWorkload::ZERO_PADDING_DEFAULT = "1";
 
-const string CoreWorkload::MIN_SCAN_LENGTH_PROPERTY = "minscanlength";
-const string CoreWorkload::MIN_SCAN_LENGTH_DEFAULT = "1";
+// const string CoreWorkload::MIN_SCAN_LENGTH_PROPERTY = "minscanlength";
+// const string CoreWorkload::MIN_SCAN_LENGTH_DEFAULT = "1";
 
-const string CoreWorkload::MAX_SCAN_LENGTH_PROPERTY = "maxscanlength";
-const string CoreWorkload::MAX_SCAN_LENGTH_DEFAULT = "1000";
+// const string CoreWorkload::MAX_SCAN_LENGTH_PROPERTY = "maxscanlength";
+// const string CoreWorkload::MAX_SCAN_LENGTH_DEFAULT = "1000";
 
-const string CoreWorkload::SCAN_LENGTH_DISTRIBUTION_PROPERTY = "scanlengthdistribution";
-const string CoreWorkload::SCAN_LENGTH_DISTRIBUTION_DEFAULT = "uniform";
+// const string CoreWorkload::SCAN_LENGTH_DISTRIBUTION_PROPERTY = "scanlengthdistribution";
+// const string CoreWorkload::SCAN_LENGTH_DISTRIBUTION_DEFAULT = "uniform";
 
 const string CoreWorkload::INSERT_ORDER_PROPERTY = "insertorder";
 const string CoreWorkload::INSERT_ORDER_DEFAULT = "hashed";
@@ -100,6 +100,8 @@ const std::string CoreWorkload::FIELD_NAME_PREFIX_DEFAULT = "field";
 const std::string CoreWorkload::KEY_SIZE_PROPERTY = "keysize";
 const std::string CoreWorkload::KEY_SIZE_PROPERTY_DEFAULT = "128";
 
+const std::string CoreWorkload::SCAN_LENGTH_PROPERTY = "scanlength";
+const std::string CoreWorkload::SCAN_LENGTH_DEFAULT = "100";
 
 namespace ycsbc {
 
@@ -110,6 +112,7 @@ void CoreWorkload::Init(const utils::Properties &p) {
   field_prefix_ = p.GetProperty(FIELD_NAME_PREFIX, FIELD_NAME_PREFIX_DEFAULT);
   key_size_ = std::stoi(p.GetProperty(KEY_SIZE_PROPERTY, KEY_SIZE_PROPERTY_DEFAULT));
   field_len_generator_ = GetFieldLenGenerator(p);
+  scan_length_ = std::stoi(p.GetProperty(SCAN_LENGTH_PROPERTY, SCAN_LENGTH_DEFAULT));
 
   double read_proportion = std::stod(p.GetProperty(READ_PROPORTION_PROPERTY,
                                                    READ_PROPORTION_DEFAULT));
@@ -125,10 +128,10 @@ void CoreWorkload::Init(const utils::Properties &p) {
   record_count_ = std::stoi(p.GetProperty(RECORD_COUNT_PROPERTY));
   std::string request_dist = p.GetProperty(REQUEST_DISTRIBUTION_PROPERTY,
                                            REQUEST_DISTRIBUTION_DEFAULT);
-  int min_scan_len = std::stoi(p.GetProperty(MIN_SCAN_LENGTH_PROPERTY, MIN_SCAN_LENGTH_DEFAULT));
-  int max_scan_len = std::stoi(p.GetProperty(MAX_SCAN_LENGTH_PROPERTY, MAX_SCAN_LENGTH_DEFAULT));
-  std::string scan_len_dist = p.GetProperty(SCAN_LENGTH_DISTRIBUTION_PROPERTY,
-                                            SCAN_LENGTH_DISTRIBUTION_DEFAULT);
+  // int min_scan_len = std::stoi(p.GetProperty(MIN_SCAN_LENGTH_PROPERTY, MIN_SCAN_LENGTH_DEFAULT));
+  // int max_scan_len = std::stoi(p.GetProperty(MAX_SCAN_LENGTH_PROPERTY, MAX_SCAN_LENGTH_DEFAULT));
+  // std::string scan_len_dist = p.GetProperty(SCAN_LENGTH_DISTRIBUTION_PROPERTY,
+  //                                           SCAN_LENGTH_DISTRIBUTION_DEFAULT);
   int insert_start = std::stoi(p.GetProperty(INSERT_START_PROPERTY, INSERT_START_DEFAULT));
 
   zero_padding_ = std::stoi(p.GetProperty(ZERO_PADDING_PROPERTY, ZERO_PADDING_DEFAULT));
@@ -186,13 +189,13 @@ void CoreWorkload::Init(const utils::Properties &p) {
 
   field_chooser_ = new UniformGenerator(0, field_count_ - 1);
 
-  if (scan_len_dist == "uniform") {
-    scan_len_chooser_ = new UniformGenerator(min_scan_len, max_scan_len);
-  } else if (scan_len_dist == "zipfian") {
-    scan_len_chooser_ = new ZipfianGenerator(min_scan_len, max_scan_len);
-  } else {
-    throw utils::Exception("Distribution not allowed for scan length: " + scan_len_dist);
-  }
+  // if (scan_len_dist == "uniform") {
+  //   scan_len_chooser_ = new UniformGenerator(min_scan_len, max_scan_len);
+  // } else if (scan_len_dist == "zipfian") {
+  //   scan_len_chooser_ = new ZipfianGenerator(min_scan_len, max_scan_len);
+  // } else {
+  //   throw utils::Exception("Distribution not allowed for scan length: " + scan_len_dist);
+  // }
 }
 
 ycsbc::Generator<uint64_t> *CoreWorkload::GetFieldLenGenerator(
@@ -331,14 +334,13 @@ DB::Status CoreWorkload::TransactionReadModifyWrite(DB &db) {
 DB::Status CoreWorkload::TransactionScan(DB &db) {
   uint64_t key_num = NextTransactionKeyNum();
   const std::string key = BuildKeyName(key_num);
-  int len = 100;
   std::vector<std::vector<DB::Field>> result;
   if (!read_all_fields()) {
     std::vector<std::string> fields;
   fields.push_back(NextFieldName());
-    return db.Scan(table_name_, key, len, &fields, result);
+  return db.Scan(table_name_, key, scan_length_, &fields, result);
   } else {
-    return db.Scan(table_name_, key, len, NULL, result);
+  return db.Scan(table_name_, key, scan_length_, NULL, result);
   }
 }
 

@@ -127,21 +127,24 @@ class CoreWorkload {
   ///
   /// The name of the property for the min scan length (number of records).
   ///
-  static const std::string MIN_SCAN_LENGTH_PROPERTY;
-  static const std::string MIN_SCAN_LENGTH_DEFAULT;
+  // static const std::string MIN_SCAN_LENGTH_PROPERTY;
+  // static const std::string MIN_SCAN_LENGTH_DEFAULT;
 
-  ///
-  /// The name of the property for the max scan length (number of records).
-  ///
-  static const std::string MAX_SCAN_LENGTH_PROPERTY;
-  static const std::string MAX_SCAN_LENGTH_DEFAULT;
+  // ///
+  // /// The name of the property for the max scan length (number of records).
+  // ///
+  // static const std::string MAX_SCAN_LENGTH_PROPERTY;
+  // static const std::string MAX_SCAN_LENGTH_DEFAULT;
 
-  ///
-  /// The name of the property for the scan length distribution.
-  /// Options are "uniform" and "zipfian" (favoring short scans).
-  ///
-  static const std::string SCAN_LENGTH_DISTRIBUTION_PROPERTY;
-  static const std::string SCAN_LENGTH_DISTRIBUTION_DEFAULT;
+  // ///
+  // /// The name of the property for the scan length distribution.
+  // /// Options are "uniform" and "zipfian" (favoring short scans).
+  // ///
+  // static const std::string SCAN_LENGTH_DISTRIBUTION_PROPERTY;
+  // static const std::string SCAN_LENGTH_DISTRIBUTION_DEFAULT;
+
+  static const std::string SCAN_LENGTH_PROPERTY;
+  static const std::string SCAN_LENGTH_DEFAULT;
 
   ///
   /// The name of the property for the order to insert records.
@@ -180,7 +183,8 @@ class CoreWorkload {
   CoreWorkload() :
       field_count_(0), read_all_fields_(false), write_all_fields_(false),
       field_len_generator_(nullptr), key_chooser_(nullptr), field_chooser_(nullptr),
-      scan_len_chooser_(nullptr), insert_key_sequence_(nullptr),
+      // scan_len_chooser_(nullptr), 
+      scan_length_(0), insert_key_sequence_(nullptr),
       transaction_insert_key_sequence_(nullptr), ordered_inserts_(true), record_count_(0) {
   }
 
@@ -188,7 +192,7 @@ class CoreWorkload {
     delete field_len_generator_;
     delete key_chooser_;
     delete field_chooser_;
-    delete scan_len_chooser_;
+    // delete scan_len_chooser_;
     delete insert_key_sequence_;
     delete transaction_insert_key_sequence_;
   }
@@ -218,7 +222,8 @@ class CoreWorkload {
   DiscreteGenerator<Operation> op_chooser_;
   Generator<uint64_t> *key_chooser_; // transaction key gen
   Generator<uint64_t> *field_chooser_;
-  Generator<uint64_t> *scan_len_chooser_;
+  // Generator<uint64_t> *scan_len_chooser_;
+  int scan_length_;
   CounterGenerator *insert_key_sequence_; // load insert key gen
   AcknowledgedCounterGenerator *transaction_insert_key_sequence_; // transaction insert key gen
   bool ordered_inserts_;

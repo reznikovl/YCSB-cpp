@@ -46,11 +46,16 @@ def clear_cache():
         r2 = subprocess.run(["echo", "3"], stdout=f2)
         if r.returncode != 0 or r2.returncode != 0:
             print("Error clearing cache...")
+            f.write("\nError Clearing Cache...\n")
         else:
             print("Cleared Cache")
+            f.write("\nCleared Cache Succesfully\n")
     except Exception as e:
         print("Exception when opening /proc/ file for caching:", e)
         print("Try running with sudo or double checking machine reqs")
+        f.write("Exception when opening /proc/ file for caching:")
+        f.write(str(e))
+        f.write("Try running with sudo or double checking machine reqs")
     
 
 if (sys.argv[1] == "1"):
@@ -68,10 +73,10 @@ if (sys.argv[1] == "1"):
         curr_command += ["-p", f"operationcount={op_count}"]
         curr_command += ["-p", f"leveldb.dbname={db_path}fig1_base_{num_mb}"] # must be last
 
-        f.write(str(curr_command))
 
         r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
         f.write("\n-----BASE WRITE " + str(num_mb) + " -----\n")
+        f.write(str(curr_command))
         f.write(r.stderr)
         f.write(r.stdout)
         
@@ -91,8 +96,8 @@ if (sys.argv[1] == "1"):
         f.write("\n-----TEST WRITE " + str(num_mb) + "-----\n")
         f.write(str(curr_command))
 
-        parse_location = r.stdout.rfind("Avg=")
-        num2 = float(r.stdout[parse_location:].split()[0].split("=")[1])
+        parse_location = r2.stdout.rfind("Avg=")
+        num2 = float(r2.stdout[parse_location:].split()[0].split("=")[1])
         results.append(("WRITE", num_mb, c, num2))
         
         f.write(r2.stderr)
@@ -174,19 +179,19 @@ print(results)
 clear_cache()
 
 
-# Perform Range Reads
+# Perform Short Range Reads
 base_write_args = ["./ycsb", "-run", "-db",
-                   "leveldb", "-P", "workloads/scan_uniform", "-s"]
+                   "leveldb", "-P", "workloads/scan_uniform", "-s", "-p", "scanlength=10"]
 base_write_args += ["-p", f"leveldb.base_scaling_factor={T}"]
 for num_mb in mb_to_write:
-    print(f"Scanning from db with {num_mb} mb base...")
+    print(f"Short Scanning from db with {num_mb} mb base...")
     curr_command = base_write_args.copy()
 
     curr_command += ["-p", f"recordcount={num_mb * 1024 * 1024 // (key_size_bytes + value_size_bytes)}"]
 
     # must be last
     curr_command += ["-p", f"leveldb.dbname={db_path}fig1_base_{num_mb}"]
-    f.write("\n-----BASE SCAN " + str(num_mb) + " -----\n")
+    f.write("\n-----BASE SHORT SCAN " + str(num_mb) + " -----\n")
     f.write(str(curr_command))
     r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
 
@@ -195,18 +200,18 @@ for num_mb in mb_to_write:
 
     parse_location = r.stdout.rfind("Avg=")
     num = float(r.stdout[parse_location:].split()[0].split("=")[1])
-    results.append(("SCAN", num_mb, 1, num))
+    results.append(("SHORT SCAN", num_mb, 1, num))
 
     
     
 
-    f.write("\n-----BASE SCAN FINISHED-----\n")
+    f.write("\n-----BASE SHORT SCAN FINISHED-----\n")
 
     curr_command.pop()  # pop previous db name
     curr_command += [f"leveldb.dbname={db_path}fig1_test_{num_mb}"]
     curr_command += ["-p", f"ratio_diff={c}"]
-    print(f"Scanning from db with {num_mb} mb test...")
-    f.write("\n-----TEST SCAN " + str(num_mb) + "-----\n")
+    print(f"Short Scanning from db with {num_mb} mb test...")
+    f.write("\n-----TEST SHORT SCAN " + str(num_mb) + "-----\n")
     f.write(str(curr_command))
     r2 = subprocess.run(
         curr_command, capture_output=True, encoding="utf-8")
@@ -215,10 +220,61 @@ for num_mb in mb_to_write:
 
     parse_location = r2.stdout.rfind("Avg=")
     num2 = float(r2.stdout[parse_location:].split()[0].split("=")[1])
-    results.append(("SCAN", num_mb, c, num2))
+    results.append(("SHORT SCAN", num_mb, c, num2))
     
 
-    f.write("\n-----TEST SCAN FINISHED-----\n")
+    f.write("\n-----TEST SHORT SCAN FINISHED-----\n")
+
+print(results)
+
+clear_cache()
+
+
+# Perform Long Range Reads
+base_write_args = ["./ycsb", "-run", "-db",
+                   "leveldb", "-P", "workloads/scan_uniform", "-s", "-p", "scanlength=100"]
+base_write_args += ["-p", f"leveldb.base_scaling_factor={T}"]
+for num_mb in mb_to_write:
+    print(f"Long Scanning from db with {num_mb} mb base...")
+    curr_command = base_write_args.copy()
+
+    curr_command += ["-p", f"recordcount={num_mb * 1024 * 1024 // (key_size_bytes + value_size_bytes)}"]
+
+    # must be last
+    curr_command += ["-p", f"leveldb.dbname={db_path}fig1_base_{num_mb}"]
+    f.write("\n-----BASE LONG SCAN " + str(num_mb) + " -----\n")
+    f.write(str(curr_command))
+    r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
+
+    f.write(r.stderr)
+    f.write(r.stdout)
+
+    parse_location = r.stdout.rfind("Avg=")
+    num = float(r.stdout[parse_location:].split()[0].split("=")[1])
+    results.append(("LONG SCAN", num_mb, 1, num))
+
+    
+    
+
+    f.write("\n-----BASE LONG SCAN FINISHED-----\n")
+
+    curr_command.pop()  # pop previous db name
+    curr_command += [f"leveldb.dbname={db_path}fig1_test_{num_mb}"]
+    curr_command += ["-p", f"ratio_diff={c}"]
+    print(f"Long Scanning from db with {num_mb} mb test...")
+    f.write("\n-----TEST LONG SCAN " + str(num_mb) + "-----\n")
+    f.write(str(curr_command))
+    r2 = subprocess.run(
+        curr_command, capture_output=True, encoding="utf-8")
+    f.write(r2.stderr)
+    f.write(r2.stdout)
+
+    parse_location = r2.stdout.rfind("Avg=")
+    num2 = float(r2.stdout[parse_location:].split()[0].split("=")[1])
+    results.append(("LONG SCAN", num_mb, c, num2))
+    
+
+    f.write("\n-----TEST LONG SCAN FINISHED-----\n")
 
 print(results)
 
