@@ -1,5 +1,4 @@
 recordcount=0
-recordcount=1000000
 workload=com.yahoo.ycsb.workloads.CoreWorkload
 
 fieldcount=1

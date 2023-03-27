@@ -1,4 +1,4 @@
-operationcount=1000
+operationcount=100000
 workload=com.yahoo.ycsb.workloads.CoreWorkload
 
 readproportion=1.0

@@ -5,17 +5,20 @@ import subprocess
 import csv
 
 # mb to write
-mb_to_write = [1024*1, 1024*2, 1024*4, 1024*6, 1024*8, 1024*10]
+# mb_to_write = [1024*1, 1024*2, 1024*4, 1024*6, 1024*8, 1024*10, 1024*12, 1024*16]
+mb_to_write = [1024*2, 1024*4, 1024*8, 1024*16, 1024*24, 1024*32]
+
+# mb_to_write = [1024*1, 1024*2, 1024*4]
 db_path = "/home/ec2-user/research/mountpt/"
 
 # T (ratio for leveling)
 T = 4
 
 # k (ratio for Autumn)
-k = 3
+k = 4
 
 # autumn parameter to use
-c = 0.8
+c = 0.7
 
 key_size_bytes = 16
 value_size_bytes = 100
@@ -35,7 +38,7 @@ f.write(f"key size (bytes) = {key_size_bytes}\n")
 f.write(f"value size (bytes) = {value_size_bytes}\n")
 
 # add list to track results
-result_fields = ["Operation", "Size (MB)", "Ratio", "Latency"]
+result_fields = ["Operation", "Size (MB)", "Ratio", "Latency", "Throughput"]
 results = []
 
 def clear_cache():
@@ -56,7 +59,6 @@ def clear_cache():
         f.write("Exception when opening /proc/ file for caching:")
         f.write(str(e))
         f.write("Try running with sudo or double checking machine reqs")
-    
 
 if (sys.argv[1] == "1"):
     # do writes
@@ -80,9 +82,11 @@ if (sys.argv[1] == "1"):
         f.write(r.stderr)
         f.write(r.stdout)
         
-        parse_location = r.stdout.rfind("Avg=")
-        num = float(r.stdout[parse_location:].split()[0].split("=")[1])
-        results.append(("WRITE", num_mb, 1, num))
+        parse_location_latency = r.stdout.rfind("Avg=")
+        latency = float(r.stdout[parse_location_latency:].split()[0].split("=")[1])
+        parse_location_throughput = r.stdout.find("Run throughput")
+        throughput = float((r.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
+        results.append(("WRITE", num_mb, 1, latency, throughput))
         
         f.write("\n-----BASE WRITE FINISHED-----\n")
 
@@ -96,9 +100,11 @@ if (sys.argv[1] == "1"):
         f.write("\n-----TEST WRITE " + str(num_mb) + "-----\n")
         f.write(str(curr_command))
 
-        parse_location = r2.stdout.rfind("Avg=")
-        num2 = float(r2.stdout[parse_location:].split()[0].split("=")[1])
-        results.append(("WRITE", num_mb, c, num2))
+        parse_location_latency = r2.stdout.rfind("Avg=")
+        latency = float(r2.stdout[parse_location_latency:].split()[0].split("=")[1])
+        parse_location_throughput = r2.stdout.find("Run throughput")
+        throughput = float((r2.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
+        results.append(("WRITE", num_mb, 0.8, latency, throughput))
         
         f.write(r2.stderr)
         f.write(r2.stdout)
@@ -145,9 +151,12 @@ for num_mb in mb_to_write:
     f.write(r.stderr)
     f.write(r.stdout)
 
-    parse_location = r.stdout.rfind("Avg=")
-    num = float(r.stdout[parse_location:].split()[0].split("=")[1])
-    results.append(("READ", num_mb, 1, num))
+    parse_location_latency = r.stdout.rfind("Avg=")
+    latency = float(r.stdout[parse_location_latency:].split()[0].split("=")[1])
+    parse_location_throughput = r.stdout.find("Run throughput")
+    throughput = float((r.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
+    results.append(("READ", num_mb, 1, latency, throughput))
+
 
     
 
@@ -167,9 +176,11 @@ for num_mb in mb_to_write:
     f.write(r2.stderr)
     f.write(r2.stdout)
 
-    parse_location = r2.stdout.rfind("Avg=")
-    num2 = float(r2.stdout[parse_location:].split()[0].split("=")[1])
-    results.append(("READ", num_mb, c, num2))
+    parse_location_latency = r2.stdout.rfind("Avg=")
+    latency = float(r2.stdout[parse_location_latency:].split()[0].split("=")[1])
+    parse_location_throughput = r2.stdout.find("Run throughput")
+    throughput = float((r2.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
+    results.append(("READ", num_mb, 0.8, latency, throughput))
     
     
     f.write("\n-----TEST READ FINISHED-----\n")
@@ -198,9 +209,11 @@ for num_mb in mb_to_write:
     f.write(r.stderr)
     f.write(r.stdout)
 
-    parse_location = r.stdout.rfind("Avg=")
-    num = float(r.stdout[parse_location:].split()[0].split("=")[1])
-    results.append(("SHORT SCAN", num_mb, 1, num))
+    parse_location_latency = r.stdout.rfind("Avg=")
+    latency = float(r.stdout[parse_location_latency:].split()[0].split("=")[1])
+    parse_location_throughput = r.stdout.find("Run throughput")
+    throughput = float((r.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
+    results.append(("SHORT SCAN", num_mb, 1, latency, throughput))
 
     
     
@@ -218,9 +231,11 @@ for num_mb in mb_to_write:
     f.write(r2.stderr)
     f.write(r2.stdout)
 
-    parse_location = r2.stdout.rfind("Avg=")
-    num2 = float(r2.stdout[parse_location:].split()[0].split("=")[1])
-    results.append(("SHORT SCAN", num_mb, c, num2))
+    parse_location_latency = r2.stdout.rfind("Avg=")
+    latency = float(r2.stdout[parse_location_latency:].split()[0].split("=")[1])
+    parse_location_throughput = r2.stdout.find("Run throughput")
+    throughput = float((r2.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
+    results.append(("SHORT SCAN", num_mb, 0.8, latency, throughput))
     
 
     f.write("\n-----TEST SHORT SCAN FINISHED-----\n")
@@ -249,9 +264,11 @@ for num_mb in mb_to_write:
     f.write(r.stderr)
     f.write(r.stdout)
 
-    parse_location = r.stdout.rfind("Avg=")
-    num = float(r.stdout[parse_location:].split()[0].split("=")[1])
-    results.append(("LONG SCAN", num_mb, 1, num))
+    parse_location_latency = r.stdout.rfind("Avg=")
+    latency = float(r.stdout[parse_location_latency:].split()[0].split("=")[1])
+    parse_location_throughput = r.stdout.find("Run throughput")
+    throughput = float((r.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
+    results.append(("LONG SCAN", num_mb, 1, latency, throughput))
 
     
     
@@ -269,9 +286,11 @@ for num_mb in mb_to_write:
     f.write(r2.stderr)
     f.write(r2.stdout)
 
-    parse_location = r2.stdout.rfind("Avg=")
-    num2 = float(r2.stdout[parse_location:].split()[0].split("=")[1])
-    results.append(("LONG SCAN", num_mb, c, num2))
+    parse_location_latency = r2.stdout.rfind("Avg=")
+    latency = float(r2.stdout[parse_location_latency:].split()[0].split("=")[1])
+    parse_location_throughput = r2.stdout.find("Run throughput")
+    throughput = float((r2.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
+    results.append(("LONG SCAN", num_mb, 0.8, latency, throughput))
     
 
     f.write("\n-----TEST LONG SCAN FINISHED-----\n")
