@@ -111,82 +111,6 @@ if (sys.argv[1] == "1"):
         f.write("\n-----TEST WRITE FINISHED" + str(num_mb) + "-----\n")
 
     print(results)
-
-# add filters to db
-if int(sys.argv[1]) >= 1:
-    os.chdir("../leveldb/build")
-    for num_mb in mb_to_write:
-        print(f"Forcing filters for {num_mb} mb base...")
-        r = subprocess.run(["./seed", "0", f"{db_path}fig1_base_{num_mb}", "1"], capture_output=True, encoding="utf-8")
-        f.write("\n-----BASE FILTER " + str(num_mb) + " -----\n")
-        f.write(r.stderr)
-        f.write(r.stdout)
-        f.write("\n-----BASE FILTER FINISHED-----\n")
-
-        print(f"Forcing filters for {num_mb} mb test...")
-        r = subprocess.run(["./seed", "0", f"{db_path}fig1_test_{num_mb}", "1"], capture_output=True, encoding="utf-8")
-        f.write("\n-----TEST FILTER " + str(num_mb) + " -----\n")
-        f.write(r.stderr)
-        f.write(r.stdout)
-        f.write("\n-----TEST FILTER FINISHED-----\n")
-
-    
-    os.chdir("../../YCSB-cpp")
-
-clear_cache()
-
-# Perform Point Reads
-base_write_args = ["./ycsb", "-run", "-db",
-                   "leveldb", "-P", "workloads/read_uniform", "-s", "-p", 'leveldb.filter_bits=5,5,5,5,5,5,5']
-for num_mb in mb_to_write:
-    print(f"Reading from db with {num_mb} mb base...")
-    curr_command = base_write_args.copy()
-    curr_command += ["-p", f"leveldb.base_scaling_factor={T}"]
-    curr_command += ["-p", f"recordcount={num_mb * 1024 * 1024 // (key_size_bytes + value_size_bytes)}"]
-    curr_command += ["-p", f"leveldb.dbname={db_path}fig1_base_{num_mb}"] # must be last
-
-    r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
-    f.write("\n-----BASE READ " + str(num_mb) + " -----\n")
-    f.write(str(curr_command))
-    f.write(r.stderr)
-    f.write(r.stdout)
-
-    parse_location_latency = r.stdout.rfind("Avg=")
-    latency = float(r.stdout[parse_location_latency:].split()[0].split("=")[1])
-    parse_location_throughput = r.stdout.find("Run throughput")
-    throughput = float((r.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
-    results.append(("READ", num_mb, 1, latency, throughput))
-
-
-    
-
-    f.write("\n-----BASE READ FINISHED-----\n")
-
-    curr_command.pop()  # pop previous db name
-    curr_command += [f"leveldb.dbname={db_path}fig1_test_{num_mb}"]
-    curr_command += ["-p", f"ratio_diff={c}"]
-    print(f"Reading from db with {num_mb} mb test...")
-
-    f.write("\n-----TEST READ " + str(num_mb) + "-----\n")
-    f.write(str(curr_command))
-
-    r2 = subprocess.run(
-        curr_command, capture_output=True, encoding="utf-8")
-    
-    f.write(r2.stderr)
-    f.write(r2.stdout)
-
-    parse_location_latency = r2.stdout.rfind("Avg=")
-    latency = float(r2.stdout[parse_location_latency:].split()[0].split("=")[1])
-    parse_location_throughput = r2.stdout.find("Run throughput")
-    throughput = float((r2.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
-    results.append(("READ", num_mb, 0.8, latency, throughput))
-    
-    
-    f.write("\n-----TEST READ FINISHED-----\n")
-
-print(results)
-
 clear_cache()
 
 
@@ -297,11 +221,138 @@ for num_mb in mb_to_write:
 
 print(results)
 
+
+# Force Filters
+os.chdir("../leveldb/build")
+for num_mb in mb_to_write:
+    print(f"Forcing filters for {num_mb} mb base...")
+    r = subprocess.run(["./seed", "0", f"{db_path}fig1_base_{num_mb}", "1", "1"], capture_output=True, encoding="utf-8")
+    f.write("\n-----BASE FILTER " + str(num_mb) + " -----\n")
+    f.write(r.stderr)
+    f.write(r.stdout)
+    f.write("\n-----BASE FILTER FINISHED-----\n")
+
+    print(f"Forcing filters for {num_mb} mb test...")
+    r = subprocess.run(["./seed", "0", f"{db_path}fig1_test_{num_mb}", "1", "1"], capture_output=True, encoding="utf-8")
+    f.write("\n-----TEST FILTER " + str(num_mb) + " -----\n")
+    f.write(r.stderr)
+    f.write(r.stdout)
+    f.write("\n-----TEST FILTER FINISHED-----\n")
+
+
+os.chdir("../../YCSB-cpp")
+
+clear_cache()
+
+# Perform Point Reads
+base_write_args = ["./ycsb", "-run", "-db",
+                   "leveldb", "-P", "workloads/read_uniform", "-s", "-p", 'leveldb.filter_bits=5,5,5,5,5,5,5']
+for num_mb in mb_to_write:
+    print(f"Reading from db with {num_mb} mb base...")
+    curr_command = base_write_args.copy()
+    curr_command += ["-p", f"leveldb.base_scaling_factor={T}"]
+    curr_command += ["-p", f"recordcount={num_mb * 1024 * 1024 // (key_size_bytes + value_size_bytes)}"]
+    curr_command += ["-p", f"leveldb.dbname={db_path}fig1_base_{num_mb}"] # must be last
+
+    r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
+    f.write("\n-----BASE READ " + str(num_mb) + " -----\n")
+    f.write(str(curr_command))
+    f.write(r.stderr)
+    f.write(r.stdout)
+
+    parse_location_latency = r.stdout.rfind("Avg=")
+    latency = float(r.stdout[parse_location_latency:].split()[0].split("=")[1])
+    parse_location_throughput = r.stdout.find("Run throughput")
+    throughput = float((r.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
+    results.append(("READ", num_mb, 1, latency, throughput))
+
+
+    
+
+    f.write("\n-----BASE READ FINISHED-----\n")
+
+    curr_command.pop()  # pop previous db name
+    curr_command += [f"leveldb.dbname={db_path}fig1_test_{num_mb}"]
+    curr_command += ["-p", f"ratio_diff={c}"]
+    print(f"Reading from db with {num_mb} mb test...")
+
+    f.write("\n-----TEST READ " + str(num_mb) + "-----\n")
+    f.write(str(curr_command))
+
+    r2 = subprocess.run(
+        curr_command, capture_output=True, encoding="utf-8")
+    
+    f.write(r2.stderr)
+    f.write(r2.stdout)
+
+    parse_location_latency = r2.stdout.rfind("Avg=")
+    latency = float(r2.stdout[parse_location_latency:].split()[0].split("=")[1])
+    parse_location_throughput = r2.stdout.find("Run throughput")
+    throughput = float((r2.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
+    results.append(("READ", num_mb, 0.8, latency, throughput))
+    
+    
+    f.write("\n-----TEST READ FINISHED-----\n")
+
+print(results)
+
+
+
+# Force Filters with No Monkey
+os.chdir("../leveldb/build")
+for num_mb in mb_to_write:
+    print(f"Forcing filters for {num_mb} mb base no Monkey...")
+    r = subprocess.run(["./seed", "0", f"{db_path}fig1_base_{num_mb}", "1", "0"], capture_output=True, encoding="utf-8")
+    f.write("\n-----BASE NO MONKEY FILTER " + str(num_mb) + " -----\n")
+    f.write(r.stderr)
+    f.write(r.stdout)
+    f.write("\n-----BASE NO MONKEY FILTER FINISHED-----\n")
+
+os.chdir("../../YCSB-cpp")
+
+clear_cache()
+
+# Perform Point Reads
+base_write_args = ["./ycsb", "-run", "-db",
+                   "leveldb", "-P", "workloads/read_uniform", "-s", "-p", 'leveldb.filter_bits=5,5,5,5,5,5,5']
+for num_mb in mb_to_write:
+    print(f"Reading from db with {num_mb} mb base No Monkey...")
+    curr_command = base_write_args.copy()
+    curr_command += ["-p", f"leveldb.base_scaling_factor={T}"]
+    curr_command += ["-p", f"recordcount={num_mb * 1024 * 1024 // (key_size_bytes + value_size_bytes)}"]
+    curr_command += ["-p", f"leveldb.dbname={db_path}fig1_base_{num_mb}"] # must be last
+
+    r = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
+    f.write("\n-----BASE READ NO MONKEY" + str(num_mb) + " -----\n")
+    f.write(str(curr_command))
+    f.write(r.stderr)
+    f.write(r.stdout)
+
+    parse_location_latency = r.stdout.rfind("Avg=")
+    latency = float(r.stdout[parse_location_latency:].split()[0].split("=")[1])
+    parse_location_throughput = r.stdout.find("Run throughput")
+    throughput = float((r.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
+    results.append(("READ NO MONKEY", num_mb, 1, latency, throughput))
+
+
+    
+
+    f.write("\n-----BASE READ NO MONKEY FINISHED-----\n")
+
+print(results)
+
+
+
+
 f.close()
 with open("../logs/fig_1_" + timestr + ".csv", 'w') as out:
     csv_out = csv.writer(out)
     csv_out.writerow(result_fields)
     csv_out.writerows(results)
+
+
+
+    
     
 
 

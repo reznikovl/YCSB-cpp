@@ -2,8 +2,8 @@ workload=com.yahoo.ycsb.workloads.CoreWorkload
 
 fieldcount=1
 readproportion=0
-updateproportion=0
+updateproportion=0.2
 scanproportion=0
-insertproportion=1.0
+insertproportion=0.8
 
 requestdistribution=uniform
