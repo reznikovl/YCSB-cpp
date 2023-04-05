@@ -6,16 +6,16 @@ import csv
 
 # mb to write
 # mb_to_write = [1024*1, 1024*2, 1024*4, 1024*6, 1024*8, 1024*10, 1024*12, 1024*16]
-mb_to_write = [1024*2, 1024*4, 1024*8, 1024*16, 1024*24, 1024*32]
+mb_to_write = [1024*2, 1024*4, 1024*8, 1024*12, 1024*16, 1024*20, 1024*24, 1024*28, 1024*32]
 
 # mb_to_write = [1024*1, 1024*2, 1024*4]
 db_path = "/home/ec2-user/research/mountpt/"
 
 # T (ratio for leveling)
-T = 4
+T = 2
 
 # k (ratio for Autumn)
-k = 4
+k = 2
 
 # autumn parameter to use
 c = 0.7
@@ -62,7 +62,7 @@ def clear_cache():
 
 if (sys.argv[1] == "1"):
     # do writes
-    base_write_args = ["./ycsb", "-run", "-db", "leveldb", "-P", "workloads/write_uniform", "-s", "-p", "recordcount=0", "-p", f"keysize={key_size_bytes}", "-p", f"fieldlength={value_size_bytes}",] # for now, we are scanning for no duplicates
+    base_write_args = ["./ycsb", "-run", "-db", "leveldb", "-P", "workloads/write_uniform", "-s", "-p", "recordcount=1000000", "-p", f"keysize={key_size_bytes}", "-p", f"fieldlength={value_size_bytes}",] # for now, we are scanning for no duplicates
     for num_mb in mb_to_write:
         print(f"Seeding db with {num_mb} mb base...")
         curr_command = base_write_args.copy()
