@@ -114,6 +114,8 @@ class LeveldbDB : public DB {
   std::string field_prefix_;
   leveldb::ReadOptions read_opts_;
 
+  int sleep_time_;
+
   static leveldb::DB *db_;
   static int ref_cnt_;
   static std::mutex mu_;

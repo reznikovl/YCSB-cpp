@@ -18,7 +18,7 @@ T = 2
 k = 2
 
 # autumn parameter to use
-c = 0.7
+c = 0.8
 
 key_size_bytes = 16
 value_size_bytes = 100
@@ -69,6 +69,9 @@ if (sys.argv[1] == "1"):
 
         # set scaling factor to T
         curr_command += ["-p", f"leveldb.base_scaling_factor={T}"]
+
+        # set sleep time (approx 10 minutes for 32 GB and scaled based on size)
+        curr_command += ["-p", f"leveldb.sleep_time={num_mb // 50}"]
         
 
         op_count = num_mb * 1024 * 1024 // (key_size_bytes + value_size_bytes)

@@ -57,6 +57,9 @@ namespace {
 
   const std::string PROP_BLOCK_RESTART_INTERVAL = "leveldb.block_restart_interval";
   const std::string PROP_BLOCK_RESTART_INTERVAL_DEFAULT = "0";
+
+  const std::string PROP_SLEEP_TIME = "leveldb.sleep_time";
+  const std::string PROP_SLEEP_TIME_DEFAULT = "0";
 } // anonymous
 
 namespace ycsbc {
@@ -70,6 +73,7 @@ void LeveldbDB::Init() {
 
   const utils::Properties &props = *props_;
   const std::string &format = props.GetProperty(PROP_FORMAT, PROP_FORMAT_DEFAULT);
+  sleep_time_ = std::stoi(props.GetProperty(PROP_SLEEP_TIME, PROP_SLEEP_TIME_DEFAULT));
   if (format == "single") {
     format_ = kSingleEntry;
     method_read_ = &LeveldbDB::ReadSingleEntry;
@@ -138,6 +142,10 @@ void LeveldbDB::Cleanup() {
   const std::lock_guard<std::mutex> lock(mu_);
   if (--ref_cnt_) {
     return;
+  }
+  if (sleep_time_ > 0) {
+    std::cout << "Sleeping for " << sleep_time_ << " seconds...";
+    sleep(sleep_time_);
   }
   delete db_;
 }
