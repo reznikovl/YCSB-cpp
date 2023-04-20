@@ -71,7 +71,7 @@ if (sys.argv[1] == "1"):
         curr_command += ["-p", f"leveldb.base_scaling_factor={T}"]
 
         # set sleep time (approx 10 minutes for 32 GB and scaled based on size)
-        curr_command += ["-p", f"leveldb.sleep_time={num_mb // 33}"]
+        curr_command += ["-p", f"leveldb.sleep_time={num_mb // 20}"]
         
 
         op_count = num_mb * 1024 * 1024 // (key_size_bytes + value_size_bytes)
