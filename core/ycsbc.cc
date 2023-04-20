@@ -168,6 +168,10 @@ int main(const int argc, const char *argv[]) {
     std::cout << "Run throughput(ops/sec): " << sum / runtime << std::endl;
   }
 
+  std::cout << "before sleep ... \n";
+  std::this_thread::sleep_for(std::chrono::seconds(stoi(props.GetProperty("leveldb.sleep_time", "0"))));
+  std::cout << "after sleep ... \n";
+
   for (int i = 0; i < num_threads; i++) {
     delete dbs[i];
   }
