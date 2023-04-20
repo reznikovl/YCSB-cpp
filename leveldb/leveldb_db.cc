@@ -135,7 +135,7 @@ void LeveldbDB::Init() {
   if (!s.ok()) {
     throw utils::Exception(std::string("LevelDB Open: ") + s.ToString());
   }
-  sleep(4);
+  sleep(60);
 }
 
 void LeveldbDB::Cleanup() {
