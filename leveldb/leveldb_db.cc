@@ -143,11 +143,11 @@ void LeveldbDB::Cleanup() {
   if (--ref_cnt_) {
     return;
   }
-  if (sleep_time_ > 0) {
-    std::cout << "Sleeping for " << sleep_time_ << " seconds...";
-    sleep(sleep_time_);
-  }
-  delete db_;
+  // if (sleep_time_ > 0) {
+  //   std::cout << "Sleeping for " << sleep_time_ << " seconds...";
+  //   sleep(sleep_time_);
+  // }
+  //delete db_;
 }
 
 void LeveldbDB::GetOptions(const utils::Properties &props, leveldb::Options *opt) {
