@@ -135,6 +135,18 @@ void LeveldbDB::Init() {
   if (!s.ok()) {
     throw utils::Exception(std::string("LevelDB Open: ") + s.ToString());
   }
+  std::cout << "Printing db stats then sleeping..." << std::endl;
+  std::vector<std::vector<long>> entries_per_run_with_levels =
+      db_->GetExactEntriesPerRun();
+  for (int i = 0; i < entries_per_run_with_levels.size(); i++)
+  {
+    for (int j = 0; j < entries_per_run_with_levels[i].size(); j++)
+    {
+      std::cout << "Level " << i << " run " << j
+                << " size: " << entries_per_run_with_levels[i][j]
+                << std::endl;
+    }
+  }
   sleep(60);
 }
 
