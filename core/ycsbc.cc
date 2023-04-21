@@ -163,14 +163,13 @@ int main(const int argc, const char *argv[]) {
       status_future.wait();
     }
 
+    std::cout << "sleep time: "<<stoi(props.GetProperty("leveldb.sleep_time", "0"))<<std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(stoi(props.GetProperty("leveldb.sleep_time", "0"))));
+
     std::cout << "Run runtime(sec): " << runtime << std::endl;
     std::cout << "Run operations(ops): " << sum << std::endl;
     std::cout << "Run throughput(ops/sec): " << sum / runtime << std::endl;
   }
-
-  std::cout << "before sleep ... \n";
-  std::this_thread::sleep_for(std::chrono::seconds(stoi(props.GetProperty("leveldb.sleep_time", "0"))));
-  std::cout << "after sleep ... \n";
 
   for (int i = 0; i < num_threads; i++) {
     delete dbs[i];
