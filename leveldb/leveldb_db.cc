@@ -311,11 +311,11 @@ DB::Status LeveldbDB::ReadSingleEntry(const std::string &table, const std::strin
   } else if (!s.ok()) {
     throw utils::Exception(std::string("LevelDB Get: ") + s.ToString());
   }
-  // if (fields != nullptr) {
-  //   DeserializeRowFilter(&result, data, *fields);
-  // } else {
-  //   DeserializeRow(&result, data);
-  // }
+  if (fields != nullptr) {
+    DeserializeRowFilter(&result, data, *fields);
+  } else {
+    DeserializeRow(&result, data);
+  }
   return kOK;
 }
 
@@ -325,14 +325,14 @@ DB::Status LeveldbDB::ScanSingleEntry(const std::string &table, const std::strin
   leveldb::Iterator *db_iter = db_->NewIterator(read_opts_);
   db_iter->Seek(key);
   for (int i = 0; db_iter->Valid() && i < len; i++) {
-    // std::string data = db_iter->value().ToString();
-    // result.push_back(std::vector<Field>());
-    // std::vector<Field> &values = result.back();
-    // if (fields != nullptr) {
-    //   DeserializeRowFilter(&values, data, *fields);
-    // } else {
-    //   DeserializeRow(&values, data);
-    // }
+    std::string data = db_iter->value().ToString();
+    result.push_back(std::vector<Field>());
+    std::vector<Field> &values = result.back();
+    if (fields != nullptr) {
+      DeserializeRowFilter(&values, data, *fields);
+    } else {
+      DeserializeRow(&values, data);
+    }
     db_iter->Next();
   }
   delete db_iter;
