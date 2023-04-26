@@ -52,7 +52,7 @@ results = []
 
 if (sys.argv[1] == "1"):
     # load and use ycsb default params
-    base_write_args = ["./ycsb", "-run", "-db", "leveldb", "-P", "workloads/ycsb_load", "-s", "-p", "recordcount=1000000",] # for now, we are scanning for no duplicates
+    base_write_args = ["./ycsb", "-run", "-db", "leveldb", "-P", "workloads/ycsb_load", "-s",]
     for num_mb in mb_to_write:
         print(f"Seeding db with {num_mb} mb base...")
         curr_command = base_write_args.copy()
@@ -65,6 +65,7 @@ if (sys.argv[1] == "1"):
         
 
         op_count = int(num_mb * 1024 * 1024 // 1024) #ycsb default 1KB
+        curr_command += ["-p", f"recordcount={op_count}"]
         curr_command += ["-p", f"operationcount={op_count}"]
         curr_command += ["-p", f"leveldb.dbname={db_path}ycsb_workloads_base_{num_mb}"] # must be last
 

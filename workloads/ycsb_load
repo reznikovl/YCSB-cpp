@@ -1,5 +1,6 @@
 workload=com.yahoo.ycsb.workloads.CoreWorkload
 
+fieldcount=10
 readproportion=0
 updateproportion=0
 scanproportion=0
