@@ -65,7 +65,7 @@ if (sys.argv[1] == "1"):
         
 
         op_count = int(num_mb * 1024 * 1024 // 1024) #ycsb default 1KB
-        curr_command += ["-p", f"recordcount={op_count}"]
+        curr_command += ["-p", f"recordcount=1"] # key start at 1
         curr_command += ["-p", f"operationcount={op_count}"]
         curr_command += ["-p", f"leveldb.dbname={db_path}ycsb_workloads_base_{num_mb}"] # must be last
 
