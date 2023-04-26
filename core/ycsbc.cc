@@ -158,6 +158,9 @@ int main(const int argc, const char *argv[]) {
       sum += n.get();
     }
     double runtime = timer.End();
+    if (!do_load){
+      runtime -= 60; // initDB sleep for 60 sec
+    }
 
     if (show_status) {
       status_future.wait();
