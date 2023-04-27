@@ -54,6 +54,8 @@ if (sys.argv[1] == "1"):
     # load and use ycsb default params
     base_write_args = ["./ycsb", "-run", "-db", "leveldb", "-P", "workloads/ycsb_load", "-s",]
     for num_mb in mb_to_write:
+        op_count = int(num_mb * 1024 * 1024 // 1024) #ycsb default 1KB
+
         print(f"Seeding db with {num_mb} mb base...")
         curr_command = base_write_args.copy()
 
@@ -61,10 +63,8 @@ if (sys.argv[1] == "1"):
         curr_command += ["-p", f"leveldb.base_scaling_factor={T}"]
 
         # set sleep time (approx 10 minutes for 32 GB and scaled based on size)
-        curr_command += ["-p", f"leveldb.sleep_time={num_mb // 10}"]
+        curr_command += ["-p", f"leveldb.sleep_time={num_mb // 30}"]
         
-
-        op_count = int(num_mb * 1024 * 1024 // 1024) #ycsb default 1KB
         curr_command += ["-p", f"recordcount=1"] # key start at 1
         curr_command += ["-p", f"operationcount={op_count}"]
         curr_command += ["-p", f"leveldb.dbname={db_path}ycsb_workloads_base_{num_mb}"] # must be last
@@ -75,34 +75,29 @@ if (sys.argv[1] == "1"):
         f.write(str(curr_command))
         f.write(r.stderr)
         f.write(r.stdout)
-        
-        parse_location_latency = r.stdout.rfind("Avg=")
-        latency = float(r.stdout[parse_location_latency:].split()[0].split("=")[1])
+
         parse_location_throughput = r.stdout.find("Run throughput")
         throughput = float((r.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
-        results.append(("WRITE", num_mb, 1, latency, throughput))
-        
+        results.append(("WRITE", num_mb, 1, throughput))
         f.write("\n-----BASE WRITE FINISHED-----\n")
 
         curr_command = base_write_args.copy()
         curr_command += ["-p", f"leveldb.base_scaling_factor={k}"] # set scaling factor to k
-        curr_command += ["-p", f"leveldb.sleep_time={num_mb // 10}"]
+        curr_command += ["-p", f"leveldb.sleep_time={num_mb // 30}"]
         curr_command += ["-p", f"operationcount={op_count}"] # set operation count
         curr_command += ["-p", f"leveldb.dbname={db_path}ycsb_workloads_test_{num_mb}"]
         curr_command += ["-p", f"leveldb.ratio_diff={c}"]
+        curr_command += ["-p", f"recordcount=1"] # key start at 1
         print(f"Seeding db with {num_mb} mb test...")
         r2 = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
         f.write("\n-----TEST WRITE " + str(num_mb) + "-----\n")
         f.write(str(curr_command))
-
-        parse_location_latency = r2.stdout.rfind("Avg=")
-        latency = float(r2.stdout[parse_location_latency:].split()[0].split("=")[1])
-        parse_location_throughput = r2.stdout.find("Run throughput")
-        throughput = float((r2.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
-        results.append(("WRITE", num_mb, 0.8, latency, throughput))
-        
         f.write(r2.stderr)
         f.write(r2.stdout)
+
+        parse_location_throughput = r2.stdout.find("Run throughput")
+        throughput = float((r2.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
+        results.append(("WRITE", num_mb, 0.8, throughput))
         f.write("\n-----TEST WRITE FINISHED" + str(num_mb) + "-----\n")
 
     print(results)
@@ -131,11 +126,9 @@ for task in ["workloadc","workloade","workloadb", "workloadd", "workloadf","work
         f.write(r2.stderr)
         f.write(r2.stdout)
 
-        parse_location_latency = r2.stdout.rfind("Avg=")
-        latency = float(r2.stdout[parse_location_latency:].split()[0].split("=")[1])
         parse_location_throughput = r2.stdout.find("Run throughput")
         throughput = float((r2.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
-        results.append((task, num_mb, 0.8, latency, throughput))
+        results.append((task, num_mb, 0.8, throughput))
         
 
         f.write("\n-----TEST WORKLOAD FINISHED-----\n")
@@ -155,11 +148,9 @@ for task in ["workloadc","workloade","workloadb", "workloadd", "workloadf","work
         f.write(r.stderr)
         f.write(r.stdout)
 
-        parse_location_latency = r.stdout.rfind("Avg=")
-        latency = float(r.stdout[parse_location_latency:].split()[0].split("=")[1])
         parse_location_throughput = r.stdout.find("Run throughput")
         throughput = float((r.stdout[parse_location_throughput + 24:]).strip())  # magic number :(
-        results.append((task, num_mb, 1, latency, throughput))
+        results.append((task, num_mb, 1, throughput))
         f.write("\n-----BASE WORKLOAD FINISHED-----\n")
 
     print(results)
