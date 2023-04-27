@@ -6,7 +6,7 @@ import csv
 
 # mb to write
 # mb_to_write = [1024*1, 1024*2, 1024*4, 1024*6, 1024*8, 1024*10, 1024*12, 1024*16]
-mb_to_write = [1024*8, 1024*16, 1024*24, 1024*32]
+mb_to_write = [1024*3, 1024*16, 1024*29, 1024*42]
 
 # mb_to_write = [1024*1, 1024*2, 1024*4]
 db_path = "/home/ec2-user/research/mountpt/"
@@ -98,6 +98,9 @@ if (sys.argv[1] == "1"):
         curr_command += ["-p", f"operationcount={op_count}"] # set operation count
         curr_command += ["-p", f"leveldb.dbname={db_path}fig1_test_{num_mb}"]
         curr_command += ["-p", f"leveldb.ratio_diff={c}"]
+
+        # set sleep time (approx 10 minutes for 32 GB and scaled based on size)
+        curr_command += ["-p", f"leveldb.sleep_time={num_mb // 20}"]
         print(f"Seeding db with {num_mb} mb test...")
         r2 = subprocess.run(curr_command, capture_output=True, encoding="utf-8")
         f.write("\n-----TEST WRITE " + str(num_mb) + "-----\n")
@@ -119,7 +122,7 @@ clear_cache()
 
 # Perform Short Range Reads
 base_write_args = ["./ycsb", "-run", "-db",
-                   "leveldb", "-P", "workloads/scan_uniform", "-s", "-p", "scanlength=5"]
+                   "leveldb", "-P", "workloads/scan_uniform", "-s", "-p", "scanlength=10", "-p", "ops_to_skip=100000"]
 base_write_args += ["-p", f"leveldb.base_scaling_factor={T}"]
 for num_mb in mb_to_write:
     print(f"Short Scanning from db with {num_mb} mb base...")
@@ -149,7 +152,7 @@ for num_mb in mb_to_write:
 
     curr_command.pop()  # pop previous db name
     curr_command += [f"leveldb.dbname={db_path}fig1_test_{num_mb}"]
-    curr_command += ["-p", f"ratio_diff={c}"]
+    curr_command += ["-p", f"leveldb.ratio_diff={c}"]
     print(f"Short Scanning from db with {num_mb} mb test...")
     f.write("\n-----TEST SHORT SCAN " + str(num_mb) + "-----\n")
     f.write(str(curr_command))
@@ -173,7 +176,7 @@ clear_cache()
 
 # Perform Baseline reads no bloom filter
 base_write_args = ["./ycsb", "-run", "-db",
-                   "leveldb", "-P", "workloads/read_uniform", "-s"]
+                   "leveldb", "-P", "workloads/read_uniform", "-s", "-p", "ops_to_skip=100000"]
 for num_mb in mb_to_write:
     print(f"Reading from db with {num_mb} mb base with no filter...")
     curr_command = base_write_args.copy()
@@ -200,7 +203,7 @@ for num_mb in mb_to_write:
 
     curr_command.pop()  # pop previous db name
     curr_command += [f"leveldb.dbname={db_path}fig1_test_{num_mb}"]
-    curr_command += ["-p", f"ratio_diff={c}"]
+    curr_command += ["-p", f"leveldb.ratio_diff={c}"]
     print(f"Reading from db with {num_mb} mb test...")
 
     f.write("\n-----TEST READ NO FILTER" + str(num_mb) + "-----\n")
@@ -227,7 +230,7 @@ clear_cache()
 
 # Perform Long Range Reads
 base_write_args = ["./ycsb", "-run", "-db",
-                   "leveldb", "-P", "workloads/scan_uniform", "-s", "-p", "scanlength=50"]
+                   "leveldb", "-P", "workloads/scan_uniform", "-s", "-p", "scanlength=100", "-p", "ops_to_skip=100000"]
 base_write_args += ["-p", f"leveldb.base_scaling_factor={T}"]
 for num_mb in mb_to_write:
     print(f"Long Scanning from db with {num_mb} mb base...")
@@ -257,7 +260,7 @@ for num_mb in mb_to_write:
 
     curr_command.pop()  # pop previous db name
     curr_command += [f"leveldb.dbname={db_path}fig1_test_{num_mb}"]
-    curr_command += ["-p", f"ratio_diff={c}"]
+    curr_command += ["-p", f"leveldb.ratio_diff={c}"]
     print(f"Long Scanning from db with {num_mb} mb test...")
     f.write("\n-----TEST LONG SCAN " + str(num_mb) + "-----\n")
     f.write(str(curr_command))
@@ -302,7 +305,7 @@ clear_cache()
 
 # Perform Point Reads
 base_write_args = ["./ycsb", "-run", "-db",
-                   "leveldb", "-P", "workloads/read_uniform", "-s", "-p", 'leveldb.filter_bits=5,5,5,5,5,5,5']
+                   "leveldb", "-P", "workloads/read_uniform", "-s", "-p", 'leveldb.filter_bits=5,5,5,5,5,5,5', "-p", "ops_to_skip=100000"]
 for num_mb in mb_to_write:
     print(f"Reading from db with {num_mb} mb base...")
     curr_command = base_write_args.copy()
@@ -329,7 +332,7 @@ for num_mb in mb_to_write:
 
     curr_command.pop()  # pop previous db name
     curr_command += [f"leveldb.dbname={db_path}fig1_test_{num_mb}"]
-    curr_command += ["-p", f"ratio_diff={c}"]
+    curr_command += ["-p", f"leveldb.ratio_diff={c}"]
     print(f"Reading from db with {num_mb} mb test...")
 
     f.write("\n-----TEST READ " + str(num_mb) + "-----\n")
@@ -370,7 +373,7 @@ clear_cache()
 
 # Perform Point Reads
 base_write_args = ["./ycsb", "-run", "-db",
-                   "leveldb", "-P", "workloads/read_uniform", "-s", "-p", 'leveldb.filter_bits=5,5,5,5,5,5,5']
+                   "leveldb", "-P", "workloads/read_uniform", "-s", "-p", 'leveldb.filter_bits=5,5,5,5,5,5,5', "-p", "ops_to_skip=100000"]
 for num_mb in mb_to_write:
     print(f"Reading from db with {num_mb} mb base No Monkey...")
     curr_command = base_write_args.copy()
