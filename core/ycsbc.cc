@@ -85,6 +85,8 @@ int main(const int argc, const char *argv[]) {
   const bool show_status = (props.GetProperty("status", "false") == "true");
   const int status_interval = std::stoi(props.GetProperty("status.interval", "10"));
 
+  double initTime = 0;
+
   // load phase
   if (do_load) {
     const int total_ops = stoi(props[ycsbc::CoreWorkload::RECORD_COUNT_PROPERTY]);
@@ -105,7 +107,7 @@ int main(const int argc, const char *argv[]) {
         thread_ops++;
       }
       client_threads.emplace_back(std::async(std::launch::async, ycsbc::ClientThread, dbs[i], &wl,
-                                             thread_ops, true, true, !do_transaction, &latch));
+                                             thread_ops, true, true, !do_transaction, &latch, &initTime));
     }
     assert((int)client_threads.size() == num_threads);
 
@@ -114,7 +116,7 @@ int main(const int argc, const char *argv[]) {
       assert(n.valid());
       sum += n.get();
     }
-    double runtime = timer.End();
+    double runtime = timer.End() - initTime;
 
     if (show_status) {
       status_future.wait();
@@ -148,7 +150,7 @@ int main(const int argc, const char *argv[]) {
         thread_ops++;
       }
       client_threads.emplace_back(std::async(std::launch::async, ycsbc::ClientThread, dbs[i], &wl,
-                                             thread_ops, false, !do_load, true,  &latch));
+                                             thread_ops, false, !do_load, true,  &latch, &initTime));
     }
     assert((int)client_threads.size() == num_threads);
 
@@ -157,10 +159,7 @@ int main(const int argc, const char *argv[]) {
       assert(n.valid());
       sum += n.get();
     }
-    double runtime = timer.End();
-    if (!do_load){
-      runtime -= 60; // initDB sleep for 60 sec
-    }
+    double runtime = timer.End() - initTime;
 
     if (show_status) {
       status_future.wait();
