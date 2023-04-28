@@ -54,7 +54,7 @@ if (sys.argv[1] == "1"):
     # load and use ycsb default params
     base_write_args = ["./ycsb", "-run", "-db", "leveldb", "-P", "workloads/ycsb_load", "-s",]
     for num_mb in mb_to_write:
-        op_count = int(num_mb * 1024 * 1024 // 1128) #ycsb default 1128 Bytes
+        op_count = int(num_mb * 1024 * 1024 // 1024) #ycsb default 1024 Bytes
 
         print(f"Seeding db with {num_mb} mb base...")
         curr_command = base_write_args.copy()
@@ -111,7 +111,7 @@ for task in ["workloadc","workloade","workloadb", "workloadd", "workloadf","work
 
     for num_mb in mb_to_write:
         curr_command = base_write_args.copy()
-        curr_command += ["-p", f"recordcount={int(num_mb * 1024 * 1024 // 1128)}"]
+        curr_command += ["-p", f"recordcount={int(num_mb * 1024 * 1024 // 1024)}"]
         curr_command += ["-p", "operationcount=1000000"]
 
         curr_command += ["-p", f"leveldb.dbname={db_path}ycsb_workloads_test_{num_mb}"]

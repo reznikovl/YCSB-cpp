@@ -98,7 +98,7 @@ const std::string CoreWorkload::FIELD_NAME_PREFIX = "fieldnameprefix";
 const std::string CoreWorkload::FIELD_NAME_PREFIX_DEFAULT = "field";
 
 const std::string CoreWorkload::KEY_SIZE_PROPERTY = "keysize";
-const std::string CoreWorkload::KEY_SIZE_PROPERTY_DEFAULT = "128";
+const std::string CoreWorkload::KEY_SIZE_PROPERTY_DEFAULT = "24";
 
 const std::string CoreWorkload::SCAN_LENGTH_PROPERTY = "scanlength";
 const std::string CoreWorkload::SCAN_LENGTH_DEFAULT = "100";
