@@ -35,4 +35,8 @@ DB *DBFactory::CreateDB(utils::Properties *props, Measurements *measurements) {
   return db;
 }
 
+double DBFactory::getSkipTime(DB *db) {
+  return reinterpret_cast<DBWrapper*>(db)->skipTime;
+}
+
 } // ycsbc

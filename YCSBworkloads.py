@@ -16,8 +16,8 @@ p = Process(target=KeepConnection, args=("",))
 p.daemon = True
 p.start()
 
-# load 60 GB
-mb_to_write = [1024*60]
+# load 70 GB
+mb_to_write = [1024*70]
 
 db_path = "/home/ec2-user/research/mountpt/"
 
@@ -108,11 +108,12 @@ for task in ["workloadc","workloade","workloadb", "workloadd", "workloadf","work
     base_write_args = ["./ycsb", "-run", "-db",
                        "leveldb", "-P", "workloads/"+task, "-s"]
     base_write_args += ["-p", f"leveldb.base_scaling_factor={T}"]
+    base_write_args += ["-p", "ops_to_skip=100000"]
+    base_write_args += ["-p", "operationcount=1100000"]
 
     for num_mb in mb_to_write:
         curr_command = base_write_args.copy()
         curr_command += ["-p", f"recordcount={int(num_mb * 1024 * 1024 // 1024)}"]
-        curr_command += ["-p", "operationcount=1000000"]
 
         curr_command += ["-p", f"leveldb.dbname={db_path}ycsb_workloads_test_{num_mb}"]
         curr_command += ["-p", f"leveldb.ratio_diff={c}"]

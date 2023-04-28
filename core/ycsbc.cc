@@ -16,6 +16,7 @@
 #include <future>
 #include <chrono>
 #include <iomanip>
+#include <algorithm>
 
 #include "utils.h"
 #include "timer.h"
@@ -159,7 +160,10 @@ int main(const int argc, const char *argv[]) {
       assert(n.valid());
       sum += n.get();
     }
-    double runtime = timer.End() - initTime;
+    double skipTime = 0;
+    for (int i = 0; i < num_threads; i++) {
+      skipTime = std::max(skipTime, ycsbc::DBFactory::getSkipTime(dbs[i]));
+    double runtime = timer.End() - initTime - skipTime;
 
     if (show_status) {
       status_future.wait();

@@ -23,6 +23,7 @@ class DBFactory {
   using DBCreator = DB *(*)();
   static bool RegisterDB(std::string db_name, DBCreator db_creator);
   static DB *CreateDB(utils::Properties *props, Measurements *measurements);
+  static double getSkipTime(DB *db);
  private:
   static std::map<std::string, DBCreator> &Registry();
 };
