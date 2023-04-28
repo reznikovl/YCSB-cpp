@@ -163,6 +163,7 @@ int main(const int argc, const char *argv[]) {
     double skipTime = 0;
     for (int i = 0; i < num_threads; i++) {
       skipTime = std::max(skipTime, ycsbc::DBFactory::getSkipTime(dbs[i]));
+    }
     double runtime = timer.End() - initTime - skipTime;
 
     if (show_status) {
