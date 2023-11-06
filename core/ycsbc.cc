@@ -16,6 +16,7 @@
 #include <future>
 #include <chrono>
 #include <iomanip>
+#include <algorithm>
 
 #include "utils.h"
 #include "timer.h"
@@ -85,6 +86,8 @@ int main(const int argc, const char *argv[]) {
   const bool show_status = (props.GetProperty("status", "false") == "true");
   const int status_interval = std::stoi(props.GetProperty("status.interval", "10"));
 
+  double initTime = 0;
+
   // load phase
   if (do_load) {
     const int total_ops = stoi(props[ycsbc::CoreWorkload::RECORD_COUNT_PROPERTY]);
@@ -105,7 +108,7 @@ int main(const int argc, const char *argv[]) {
         thread_ops++;
       }
       client_threads.emplace_back(std::async(std::launch::async, ycsbc::ClientThread, dbs[i], &wl,
-                                             thread_ops, true, true, !do_transaction, &latch));
+                                             thread_ops, true, true, !do_transaction, &latch, &initTime));
     }
     assert((int)client_threads.size() == num_threads);
 
@@ -114,7 +117,7 @@ int main(const int argc, const char *argv[]) {
       assert(n.valid());
       sum += n.get();
     }
-    double runtime = timer.End();
+    double runtime = timer.End() - initTime;
 
     if (show_status) {
       status_future.wait();
@@ -148,7 +151,7 @@ int main(const int argc, const char *argv[]) {
         thread_ops++;
       }
       client_threads.emplace_back(std::async(std::launch::async, ycsbc::ClientThread, dbs[i], &wl,
-                                             thread_ops, false, !do_load, true,  &latch));
+                                             thread_ops, false, !do_load, true,  &latch, &initTime));
     }
     assert((int)client_threads.size() == num_threads);
 
@@ -157,11 +160,18 @@ int main(const int argc, const char *argv[]) {
       assert(n.valid());
       sum += n.get();
     }
-    double runtime = timer.End();
+    double skipTime = 0;
+    for (int i = 0; i < num_threads; i++) {
+      skipTime = std::max(skipTime, ycsbc::DBFactory::getSkipTime(dbs[i]));
+    }
+    double runtime = timer.End() - initTime - skipTime;
 
     if (show_status) {
       status_future.wait();
     }
+
+    std::cout << "sleep time: "<<stoi(props.GetProperty("leveldb.sleep_time", "0"))<<std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(stoi(props.GetProperty("leveldb.sleep_time", "0"))));
 
     std::cout << "Run runtime(sec): " << runtime << std::endl;
     std::cout << "Run operations(ops): " << sum << std::endl;

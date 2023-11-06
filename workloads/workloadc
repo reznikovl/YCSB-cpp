@@ -11,6 +11,7 @@ operationcount=100000
 workload=com.yahoo.ycsb.workloads.CoreWorkload
 
 readallfields=true
+fieldcount=10
 
 readproportion=1
 updateproportion=0

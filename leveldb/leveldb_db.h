@@ -20,6 +20,9 @@
 #include <leveldb/status.h>
 #include <leveldb/cache.h>
 #include <leveldb/filter_policy.h>
+#include <vector>
+#include <sstream>
+#include <iterator>
 
 namespace ycsbc {
 
@@ -109,6 +112,9 @@ class LeveldbDB : public DB {
 
   int fieldcount_;
   std::string field_prefix_;
+  leveldb::ReadOptions read_opts_;
+
+  int sleep_time_;
 
   static leveldb::DB *db_;
   static int ref_cnt_;

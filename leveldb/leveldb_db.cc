@@ -10,6 +10,7 @@
 #include "core/utils.h"
 #include "core/core_workload.h"
 #include "core/db_factory.h"
+#include <unistd.h>
 
 #include <leveldb/options.h>
 #include <leveldb/write_batch.h>
@@ -40,13 +41,25 @@ namespace {
   const std::string PROP_CACHE_SIZE_DEFAULT = "0";
 
   const std::string PROP_FILTER_BITS = "leveldb.filter_bits";
-  const std::string PROP_FILTER_BITS_DEFAULT = "0";
+  const std::string PROP_FILTER_BITS_DEFAULT = "-1";
 
   const std::string PROP_BLOCK_SIZE = "leveldb.block_size";
   const std::string PROP_BLOCK_SIZE_DEFAULT = "0";
 
+  const std::string PROP_BASE_SCALING_FACTOR = "leveldb.base_scaling_factor";
+  const std::string PROP_BASE_SCALING_FACTOR_DEFAULT = "2";
+
+  const std::string PROP_RATIO_DIFF = "leveldb.ratio_diff";
+  const std::string PROP_RATIO_DIFF_DEFAULT = "1";
+
+  const std::string PROP_CREATE_IF_MISSING = "leveldb.create_if_missing";
+  const std::string PROP_CREATE_IF_MISSING_DEFAULT = "true";
+
   const std::string PROP_BLOCK_RESTART_INTERVAL = "leveldb.block_restart_interval";
   const std::string PROP_BLOCK_RESTART_INTERVAL_DEFAULT = "0";
+
+  const std::string PROP_SLEEP_TIME = "leveldb.sleep_time";
+  const std::string PROP_SLEEP_TIME_DEFAULT = "0";
 } // anonymous
 
 namespace ycsbc {
@@ -60,6 +73,7 @@ void LeveldbDB::Init() {
 
   const utils::Properties &props = *props_;
   const std::string &format = props.GetProperty(PROP_FORMAT, PROP_FORMAT_DEFAULT);
+  sleep_time_ = std::stoi(props.GetProperty(PROP_SLEEP_TIME, PROP_SLEEP_TIME_DEFAULT));
   if (format == "single") {
     format_ = kSingleEntry;
     method_read_ = &LeveldbDB::ReadSingleEntry;
@@ -89,6 +103,9 @@ void LeveldbDB::Init() {
   field_prefix_ = props.GetProperty(CoreWorkload::FIELD_NAME_PREFIX,
                                     CoreWorkload::FIELD_NAME_PREFIX_DEFAULT);
 
+  read_opts_ = leveldb::ReadOptions();
+  read_opts_.fill_cache = false;
+
   ref_cnt_++;
   if (db_) {
     return;
@@ -100,11 +117,14 @@ void LeveldbDB::Init() {
   }
 
   leveldb::Options opt;
-  opt.create_if_missing = true;
   GetOptions(props, &opt);
 
   leveldb::Status s;
 
+  if (props.GetProperty(PROP_CREATE_IF_MISSING, PROP_CREATE_IF_MISSING_DEFAULT) == "true") {
+    opt.create_if_missing = true;
+  }
+  
   if (props.GetProperty(PROP_DESTROY, PROP_DESTROY_DEFAULT) == "true") {
     s = leveldb::DestroyDB(db_path, opt);
     if (!s.ok()) {
@@ -115,6 +135,19 @@ void LeveldbDB::Init() {
   if (!s.ok()) {
     throw utils::Exception(std::string("LevelDB Open: ") + s.ToString());
   }
+  std::cout << "Printing db stats then sleeping..." << std::endl;
+  std::vector<std::vector<long>> entries_per_run_with_levels =
+      db_->GetExactEntriesPerRun();
+  for (int i = 0; i < entries_per_run_with_levels.size(); i++)
+  {
+    for (int j = 0; j < entries_per_run_with_levels[i].size(); j++)
+    {
+      std::cout << "Level " << i << " run " << j
+                << " size: " << entries_per_run_with_levels[i][j]
+                << std::endl;
+    }
+  }
+  sleep(60);
 }
 
 void LeveldbDB::Cleanup() {
@@ -122,7 +155,11 @@ void LeveldbDB::Cleanup() {
   if (--ref_cnt_) {
     return;
   }
-  delete db_;
+  // if (sleep_time_ > 0) {
+  //   std::cout << "Sleeping for " << sleep_time_ << " seconds...";
+  //   sleep(sleep_time_);
+  // }
+  //delete db_;
 }
 
 void LeveldbDB::GetOptions(const utils::Properties &props, leveldb::Options *opt) {
@@ -138,7 +175,7 @@ void LeveldbDB::GetOptions(const utils::Properties &props, leveldb::Options *opt
   }
   size_t cache_size = std::stol(props.GetProperty(PROP_CACHE_SIZE,
                                                   PROP_CACHE_SIZE_DEFAULT));
-  if (cache_size > 0) {
+  if (cache_size >= 0) {
     opt->block_cache = leveldb::NewLRUCache(cache_size);
   }
   int max_open_files = std::stoi(props.GetProperty(PROP_MAX_OPEN_FILES,
@@ -153,10 +190,15 @@ void LeveldbDB::GetOptions(const utils::Properties &props, leveldb::Options *opt
   } else {
     opt->compression = leveldb::kNoCompression;
   }
-  int filter_bits = std::stoi(props.GetProperty(PROP_FILTER_BITS,
+  std::istringstream is(props.GetProperty(PROP_FILTER_BITS,
                                                 PROP_FILTER_BITS_DEFAULT));
-  if (filter_bits > 0) {
-    opt->filter_policy = leveldb::NewBloomFilterPolicy(filter_bits);
+
+  std::vector<long> filter((std::istream_iterator<long>(is)), (std::istream_iterator<long>()));
+  if (filter[0] <= 0) {
+    opt->filter_policy = nullptr;
+  } 
+  else {
+    opt->filter_policy = leveldb::NewBloomFilterPolicy(filter);
   }
   int block_size = std::stoi(props.GetProperty(PROP_BLOCK_SIZE,
                                                PROP_BLOCK_SIZE_DEFAULT)); 
@@ -167,6 +209,17 @@ void LeveldbDB::GetOptions(const utils::Properties &props, leveldb::Options *opt
                                                 PROP_BLOCK_RESTART_INTERVAL_DEFAULT));
   if (block_restart_interval > 0) {
     opt->block_restart_interval = block_restart_interval;
+  }
+
+  int base_scaling_factor = std::stoi(props.GetProperty(PROP_BASE_SCALING_FACTOR, PROP_BASE_SCALING_FACTOR_DEFAULT));
+  if (base_scaling_factor > 1) {
+    opt->base_scaling_factor = base_scaling_factor;
+  }
+
+  double ratio_diff = std::stod(props.GetProperty(PROP_RATIO_DIFF, PROP_RATIO_DIFF_DEFAULT));
+  if (ratio_diff < 1 && ratio_diff > 0)
+  {
+    opt->ratio_diff = ratio_diff;
   }
 }
 
@@ -252,7 +305,7 @@ DB::Status LeveldbDB::ReadSingleEntry(const std::string &table, const std::strin
                                       const std::vector<std::string> *fields,
                                       std::vector<Field> &result) {
   std::string data;
-  leveldb::Status s = db_->Get(leveldb::ReadOptions(), key, &data);
+  leveldb::Status s = db_->Get(read_opts_, key, &data);
   if (s.IsNotFound()) {
     return kNotFound;
   } else if (!s.ok()) {
@@ -269,7 +322,7 @@ DB::Status LeveldbDB::ReadSingleEntry(const std::string &table, const std::strin
 DB::Status LeveldbDB::ScanSingleEntry(const std::string &table, const std::string &key, int len,
                                       const std::vector<std::string> *fields,
                                       std::vector<std::vector<Field>> &result) {
-  leveldb::Iterator *db_iter = db_->NewIterator(leveldb::ReadOptions());
+  leveldb::Iterator *db_iter = db_->NewIterator(read_opts_);
   db_iter->Seek(key);
   for (int i = 0; db_iter->Valid() && i < len; i++) {
     std::string data = db_iter->value().ToString();
@@ -289,7 +342,7 @@ DB::Status LeveldbDB::ScanSingleEntry(const std::string &table, const std::strin
 DB::Status LeveldbDB::UpdateSingleEntry(const std::string &table, const std::string &key,
                                         std::vector<Field> &values) {
   std::string data;
-  leveldb::Status s = db_->Get(leveldb::ReadOptions(), key, &data);
+  leveldb::Status s = db_->Get(read_opts_, key, &data);
   if (s.IsNotFound()) {
     return kNotFound;
   } else if (!s.ok()) {
@@ -343,7 +396,7 @@ DB::Status LeveldbDB::DeleteSingleEntry(const std::string &table, const std::str
 DB::Status LeveldbDB::ReadCompKeyRM(const std::string &table, const std::string &key,
                                     const std::vector<std::string> *fields,
                                     std::vector<Field> &result) {
-  leveldb::Iterator *db_iter = db_->NewIterator(leveldb::ReadOptions());
+  leveldb::Iterator *db_iter = db_->NewIterator(read_opts_);
   db_iter->Seek(key);
   if (!db_iter->Valid() || KeyFromCompKey(db_iter->key().ToString()) != key) {
     return kNotFound;
@@ -386,7 +439,7 @@ DB::Status LeveldbDB::ReadCompKeyRM(const std::string &table, const std::string 
 DB::Status LeveldbDB::ScanCompKeyRM(const std::string &table, const std::string &key, int len,
                                     const std::vector<std::string> *fields,
                                     std::vector<std::vector<Field>> &result) {
-  leveldb::Iterator *db_iter = db_->NewIterator(leveldb::ReadOptions());
+  leveldb::Iterator *db_iter = db_->NewIterator(read_opts_);
   db_iter->Seek(key);
   assert(db_iter->Valid() && KeyFromCompKey(db_iter->key().ToString()) == key);
   for (int i = 0; i < len && db_iter->Valid(); i++) {
